@@ -7,6 +7,7 @@
 
 namespace CIMitar
 {
+	// translates error codes from the MI API
 	struct CIMErrors
 	{
 		static const wchar_t* GetCIMErrorMessage(MI_Result CIMErrorCode) noexcept
