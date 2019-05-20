@@ -21,9 +21,39 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CIMitar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cimerrors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="oplist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cimapplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stringformatters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="guidformatters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="exceptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cimtype.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cimapplication.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="formatters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
