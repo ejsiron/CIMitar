@@ -93,13 +93,23 @@ void CIMitar::Formatters::GetGuidFromString(const std::wstring& TextGUID, GUID* 
 	}
 }
 
+void ClearGuid(GUID* Guid)
+{
+	Guid->Data1 = Guid->Data2 = Guid->Data3 = 0;
+	for (auto i{ 0 }; i != 8; ++i)
+	{
+		Guid->Data4[i] = 0;
+	}
+}
+
 std::wstring CIMitar::Formatters::NewStringFromGUID(GUID* Guid, const bool Hyphenate, const bool Brace, const bool Uppercase)
 {
 	if (Guid == nullptr)	// todo: clean this up
 	{
 		GUID EmptyGuid{ 0 };
 		Guid = &EmptyGuid;
-		CoCreateGuid(Guid);	// todo: error checking
+		if(CoCreateGuid(Guid) != S_OK)
+			ClearGuid(Guid);
 	}
 	std::wstring GroupBreak{ (Hyphenate ? L"-" : L"") };
 	std::wstringstream GuidStream;
