@@ -154,6 +154,7 @@
     <ClInclude Include="cimapplication.h" />
     <ClInclude Include="cimerrors.h" />
     <ClInclude Include="CIMitar.h" />
+    <ClInclude Include="errorhandler.h" />
     <ClInclude Include="guidformatters.h" />
     <ClInclude Include="stringformatters.h" />
     <ClInclude Include="oplist.h" />
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClCompile Include="cimapplication.cpp" />
     <ClCompile Include="cimtype.cpp" />
+    <ClCompile Include="errorhandler.cpp" />
     <ClCompile Include="exceptions.cpp" />
     <ClCompile Include="formatters.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -1,19 +1,21 @@
 #include "stdafx.h"
 #include "cimapplication.h"
 #include "CIMitarUtility.h"
+#include "errorhandler.h"
 #include "formatguid.h"
 #include "formatstring.h"
+#include "oplist.h"
 
-using namespace std;
 using namespace CIMitar;
-using Ops = CIMitarOps::OperationCodes;
+
+using OpCodes = CIMitarOps::OperationCodes;
 
 bool CIMApplication::IsInitialized = false;
 MI_Application* CIMApplication::Application = new MI_Application;
 size_t CIMApplication::RefCount = 0;
 MI_Session* CIMApplication::LocalSession{ nullptr };
-wstring CIMApplication::LocalComputerNameFilter{};
-map<wstring, CIMApplication::SessionRecord> CIMApplication::SessionPool{ map<wstring, CIMApplication::SessionRecord>() };
+std::wstring CIMApplication::LocalComputerNameFilter{};
+std::map<std::wstring, CIMApplication::SessionRecord> CIMApplication::SessionPool{ std::map<std::wstring, CIMApplication::SessionRecord>() };
 
 MI_Session* NewSession(MI_Application* Application, const std::wstring& ComputerName)
 {
@@ -25,7 +27,7 @@ MI_Session* NewSession(MI_Application* Application, const std::wstring& Computer
 	MI_Session* NewSession = new MI_Session;
 	MI_Result ConnectResult;
 	ConnectResult = MI_Application_NewSession(Application, NULL, TargetName, NULL, NULL, NULL, NewSession);
-	ProcessCIMResult(ConnectResult, Ops::Connecting, TargetName);
+	ProcessCIMResult(ConnectResult, OpCodes::Connecting, TargetName);
 	return NewSession;
 }
 
