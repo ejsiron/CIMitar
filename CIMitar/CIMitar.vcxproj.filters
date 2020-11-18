@@ -30,9 +30,6 @@
     <ClInclude Include="oplist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cimapplication.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stringformatters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -40,6 +37,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="errorhandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="connection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,14 +53,17 @@
     <ClCompile Include="cimtype.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cimapplication.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="formatters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="errorhandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Architecture.txt" />
   </ItemGroup>
 </Project>

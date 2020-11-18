@@ -151,9 +151,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="cimapplication.h" />
     <ClInclude Include="cimerrors.h" />
     <ClInclude Include="CIMitar.h" />
+    <ClInclude Include="connection.h" />
     <ClInclude Include="errorhandler.h" />
     <ClInclude Include="guidformatters.h" />
     <ClInclude Include="stringformatters.h" />
@@ -162,8 +162,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cimapplication.cpp" />
     <ClCompile Include="cimtype.cpp" />
+    <ClCompile Include="connection.cpp" />
     <ClCompile Include="errorhandler.cpp" />
     <ClCompile Include="exceptions.cpp" />
     <ClCompile Include="formatters.cpp" />
@@ -173,6 +173,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Architecture.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
