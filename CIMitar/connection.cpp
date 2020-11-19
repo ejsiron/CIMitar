@@ -1,19 +1,19 @@
 #include "stdafx.h"
 #include "connection.h"
 
-namespace CIMitar
+using namespace CIMitar;
+
+std::unique_ptr<MI_Application> CIMConnection::TheCimApplication = nullptr;
+
+CIMConnection::CIMConnection(std::wstring& ComputerName)
 {
-	CIMConnection::CIMConnection(std::wstring& ComputerName)
+	if (CIMConnection::TheCimApplication == nullptr)
 	{
-		if (TheCIMApplication == nullptr)
-		{
-			//MI_Instance AppInitError;
-			auto AppInitResult = MI_Application_Initialize(0, "CIMitar", NULL, &TheCIMApplication); //TODO: need to do more error-checking
-			some a;
-		}
+		MI_Instance AppInitError;
+		auto AppInitResult = MI_Application_Initialize(0, "CIMitar", &AppInitError, TheCimApplication.get()); //TODO: need to do more error-checking
 	}
-	const bool CIMConnection::operator==(const CIMConnection& rhs) const noexcept
-	{
-		return false;
-	}
+}
+const bool CIMConnection::operator==(const CIMConnection& rhs) const noexcept
+{
+	return false;
 }

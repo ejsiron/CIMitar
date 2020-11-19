@@ -12,7 +12,7 @@ namespace CIMitar
 	{
 	private:
 		CIMConnection(std::wstring& ComputerName);
-		static std::unique_ptr<MI_Application> TheCimApplication = nullptr;
+		static std::unique_ptr<MI_Application> TheCimApplication;
 		static std::vector<std::reference_wrapper<CIMConnection>> Connections;
 	public:
 		~CIMConnection();

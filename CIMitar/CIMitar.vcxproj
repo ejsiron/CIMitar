@@ -156,6 +156,7 @@
     <ClInclude Include="connection.h" />
     <ClInclude Include="errorhandler.h" />
     <ClInclude Include="guidformatters.h" />
+    <ClInclude Include="instance.h" />
     <ClInclude Include="stringformatters.h" />
     <ClInclude Include="oplist.h" />
     <ClInclude Include="stdafx.h" />
@@ -167,6 +168,7 @@
     <ClCompile Include="errorhandler.cpp" />
     <ClCompile Include="exceptions.cpp" />
     <ClCompile Include="formatters.cpp" />
+    <ClCompile Include="instance.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
