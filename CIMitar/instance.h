@@ -30,6 +30,8 @@ namespace CIMitar
 		const std::wstring GetNamespace() const;
 		const std::wstring GetServerName() const;
 		const bool IsA(const std::wstring& ClassName) const;
+		const bool SetNamespace(const std::wstring& Namespace);
+		const bool SetServerName(const std::wstring& Namespace);
 	};
 
 	class DynamicInstance : Instance
