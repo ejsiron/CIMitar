@@ -14,7 +14,7 @@
 
 namespace CIMitar
 {
-	class cimitar_exception sealed
+	class cimitar_exception
 	{
 	private:
 		const std::wstring moreinformation{};
@@ -29,6 +29,18 @@ namespace CIMitar
 		const wchar_t* what() const noexcept { return Message(); }
 		const std::wstring& MoreInformation() const noexcept { return moreinformation; }
 	};
+
+	class Error
+	{
+	private:
+		int CimErrorCode = 0;
+	public:
+		const int Code() const noexcept { return CimErrorCode; }
+		const wchar_t* Message() const noexcept;
+		static const wchar_t* FindMessage(const int Code) noexcept;
+	};
+
+
 
 	enum class CIMType
 	{

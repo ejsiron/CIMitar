@@ -39,13 +39,19 @@
     <ClInclude Include="errorhandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="connection.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="instance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="element.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="value.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="error.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,13 +71,19 @@
     <ClCompile Include="errorhandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="connection.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="instance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="element.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="value.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -33,6 +33,9 @@ namespace CIMitar
 
 		/* Do not call from an asynchronous callback! Use CloseAsync instead! */
 		const bool Close();
+
+		/* Do not call from a synchronous method! Use Close instead! */
+		void CloseAsync();
 	};
 #pragma region Session operators
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;

@@ -153,7 +153,8 @@
   <ItemGroup>
     <ClInclude Include="cimerrors.h" />
     <ClInclude Include="CIMitar.h" />
-    <ClInclude Include="connection.h" />
+    <ClInclude Include="error.h" />
+    <ClInclude Include="session.h" />
     <ClInclude Include="element.h" />
     <ClInclude Include="errorhandler.h" />
     <ClInclude Include="guidformatters.h" />
@@ -162,10 +163,12 @@
     <ClInclude Include="oplist.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="value.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cimtype.cpp" />
-    <ClCompile Include="connection.cpp" />
+    <ClCompile Include="error.cpp" />
+    <ClCompile Include="session.cpp" />
     <ClCompile Include="element.cpp" />
     <ClCompile Include="errorhandler.cpp" />
     <ClCompile Include="exceptions.cpp" />
@@ -177,6 +180,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="value.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Architecture.txt" />
