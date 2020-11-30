@@ -1,14 +1,17 @@
 #pragma once
 
+#ifndef __cplusplus
+#error CIMitar is a C++ wrapper and only works with C++.
+#endif
+
 #pragma comment(lib,"mi.lib")
 
 #include <Windows.h>
-
-#ifndef _MI_H_INCLUDED
-#define _MI_H_INCLUDED
-#include <mi.h>
-#endif // _MI_H_INCLUDED
-
+#include <codecvt>
+#include <locale>
+#include <mi.h> // caution: earlier versions of mi.h did not have a header guard
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -34,13 +37,69 @@ namespace CIMitar
 	{
 	private:
 		int CimErrorCode = 0;
+		// todo: add Operation tracking
 	public:
 		const int Code() const noexcept { return CimErrorCode; }
+		void Code(const int Code) noexcept { CimErrorCode = Code; }
 		const wchar_t* Message() const noexcept;
 		static const wchar_t* FindMessage(const int Code) noexcept;
 	};
 
+	class CimBase
+	{
+	private:
+		Error LastError{};
+	protected:
+		inline void SetError(const int Code) { LastError.Code(Code); }
+	public:
+		const Error& GetLastError() { return LastError; }
+		virtual ~CimBase() = default;
+	};
 
+#pragma region Session
+	enum class SessionProtocols { DCOM, WSMAN };
+
+	struct _SessionOptions
+	{
+		SessionProtocols Protocol = SessionProtocols::WSMAN;
+		bool UseHTTPS = false;
+		std::wstring LocaleName{
+			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().from_bytes(
+				std::locale("").name()
+			) };
+	} SessionOptions;
+
+	class Session :CimBase
+	{
+	private:
+		unsigned long long SessionID = 0;
+		MI_Session* CIMSession = nullptr;
+		static std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>> Sessions;
+		// TODO: add tracking mechanism for operations
+	public:
+		Session(std::wstring& ComputerName);
+		virtual ~Session();
+		const bool StartLocal();
+		const bool StartLocal(SessionProtocols SessionProtocol);
+		const bool Connect(std::wstring& ComputerName);
+		const bool Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol);
+		void StartLocalAsync();
+		void ConnectAsync(std::wstring& ComputerName);
+		void ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol);
+		const bool Reconnect();
+		void ReconnectAsync();
+
+		/* Do not call from an asynchronous callback! Use CloseAsync instead! */
+		const bool Close();
+
+		/* Do not call from a synchronous method! Use Close instead! */
+		void CloseAsync();
+	};
+	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
+	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
+#pragma endregion Session
+
+#pragma region Initial type work
 
 	enum class CIMType
 	{
@@ -457,5 +516,5 @@ namespace CIMitar
 		CIMUInt64A& operator=(CIMUInt64A&&) = default;
 		operator std::vector<unsigned long long>() const noexcept { return Value; }
 	};
-
+#pragma endregion Initial type work
 }

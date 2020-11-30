@@ -24,9 +24,6 @@
     <ClInclude Include="CIMitar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cimerrors.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="oplist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -46,12 +43,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="value.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="error.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

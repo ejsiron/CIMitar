@@ -6,6 +6,7 @@
 
 namespace CIMitar
 {
+	constexpr wchar_t CIMCodeNotFoundMessage[] = L"No such CIM error code";
 	static constexpr std::array<const wchar_t*, 29> ErrorMessages =
 	{
 		L"The operation was successful.",
@@ -45,6 +46,13 @@ namespace CIMitar
 
 	const wchar_t* Error::FindMessage(const int Code) noexcept
 	{
-		return ErrorMessages[Code];
+		if (Code < 0 || Code >= ErrorMessages.size())
+		{
+			return ErrorMessages[Code];
+		}
+		else
+		{
+			return CIMCodeNotFoundMessage;
+		}
 	}
 }
