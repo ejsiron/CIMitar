@@ -14,11 +14,6 @@ static MI_Session* NewCimSession(const wchar_t* ComputerName, SessionProtocols P
 	//MI_Application_NewSession()
 }
 
-static void CreateSession(const wchar_t* ComputerName)
-{
-	 
-}
-
 Session::Session(std::wstring& ComputerName)
 {
 	if (Sessions.empty())
@@ -51,15 +46,14 @@ Session::~Session()
 	}
 }
 
-const bool Session::Connect()
-{
-
-}
-
-const bool Session::Connect(wstring& ComputerName)
-{
-
-}
+const bool Session::StartLocal(){}
+const bool Session::StartLocal(SessionProtocols SessionProtocol){}
+const bool Session::Connect(std::wstring& ComputerName){}
+const bool Session::Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol){}
+void Session::StartLocalAsync(){}
+void Session::StartLocalAsync(SessionProtocols SessionProtocol){}
+void Session::ConnectAsync(std::wstring& ComputerName){}
+void Session::ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol){}
 
 const bool Session::Close()
 {

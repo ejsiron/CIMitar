@@ -61,16 +61,38 @@ namespace CIMitar
 
 #pragma region Session
 	enum class SessionProtocols { DCOM, WSMAN };
+	enum class SessionPrefixOverrides { NONE, HTTP, HTTPS };
+	enum class SessionPacketEncodingOptions { DEFAULT, UTF8, UTF16 };
+	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 
-	struct _SessionOptions
+	class SessionOptions
 	{
-		SessionProtocols Protocol = SessionProtocols::WSMAN;
-		bool UseHTTPS = false;
-		std::wstring LocaleName{
+	private:
+		std::vector<MI_UserCredentials> TargetCredentials;
+		std::vector<MI_UserCredentials> ProxyCredentials;
+		bool CheckCACert{ false };
+		bool CheckCertCN{ false };
+		bool CheckCertRevocation{ false };
+		unsigned int OverridePort{ 0 };
+		bool EncodePortInSPN{ false };
+		SessionPrefixOverrides SessionPrefixOverride{ SessionPrefixOverrides::NONE };
+		MI_DestinationOptions_ImpersonationType ImpersonationType{ MI_DestinationOptions_ImpersonationType::MI_DestinationOptions_ImpersonationType_Default };
+		unsigned int MaxPacketSizeOverride{ 0 };
+		SessionPacketEncodingOptions SessionPacketEncoding{ SessionPacketEncodingOptions::DEFAULT };
+		bool PacketIntegrity{ false };
+		bool PacketPrivacy{ false };
+		SessionProxyOptions SessionProxyOption{ SessionProxyOptions::AUTO };
+		// string, number, transport, timeout
+		std::wstring OperationLocale{
 			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().from_bytes(
 				std::locale("").name()
-			) };
-	} SessionOptions;
+			)
+		};
+	public:
+		std::wstring ComputerName;	// probably should not be part of the options
+		SessionProtocols Protocol = SessionProtocols::WSMAN;
+		bool UseHTTPS = false;
+	}
 
 	class Session :CimBase
 	{
@@ -82,14 +104,10 @@ namespace CIMitar
 	public:
 		Session(std::wstring& ComputerName);
 		virtual ~Session();
-		const bool StartLocal();
-		const bool StartLocal(SessionProtocols SessionProtocol);
-		const bool Connect(std::wstring& ComputerName);
-		const bool Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol);
-		void StartLocalAsync();
-		void StartLocalAsync(SessionProtocols SessionProtocol);
-		void ConnectAsync(std::wstring& ComputerName);
-		void ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol);
+		const bool StartLocal(SessionProtocols SessionProtocol = SessionProtocols::DCOM);
+		const bool Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol = SessionProtocols::WSMAN);
+		void StartLocalAsync(SessionProtocols SessionProtocol = SessionProtocols::DCOM);
+		void ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol = SessionProtocols::WSMAN);
 		const bool Reconnect();
 		void ReconnectAsync();
 
