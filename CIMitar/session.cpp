@@ -4,21 +4,28 @@
 using namespace std;
 using namespace CIMitar;
 
-static MI_Application* TheCimApplication = nullptr;
+static MI_Application TheCimApplication = MI_APPLICATION_NULL;
 static unsigned long long NextIndex = 0;
+std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>> Session::Sessions
+{ std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>>() };
 
 static MI_Session* NewCimSession(const wchar_t* ComputerName, SessionProtocols Protocol)
 {
-	MI_Application_NewSession()
+	//MI_Application_NewSession()
+}
+
+static void CreateSession(const wchar_t* ComputerName)
+{
+	 
 }
 
 Session::Session(std::wstring& ComputerName)
 {
-	if (TheCimApplication == nullptr)
+	if (Sessions.empty())
 	{
-		MI_Instance AppInitError;
-		auto AppInitResult = MI_Application_Initialize(0, L"CIMitar", &AppInitError, TheCimApplication); //TODO: need to do more error-checking
-		Sessions = std::map<unsigned long long, std::reference_wrapper<Session>, greater<unsigned long long>>();
+		//std::vector<MI_Instance*> AppInitErrors(1);
+		MI_Instance* AppInitErrors;
+		auto AppInitResult = MI_Application_Initialize(0, L"CIMitar", &AppInitErrors, &TheCimApplication); //TODO: need to do more error-checking
 		NextIndex = 0;
 	}
 	else
@@ -30,10 +37,17 @@ Session::Session(std::wstring& ComputerName)
 
 Session::~Session()
 {
-	if (ActiveConnections <= 0 && TheCimApplication != nullptr)
+	auto loc = Sessions.find(SessionID);
+	if (loc != Sessions.end())
 	{
-		MI_Application_Close(TheCimApplication);
-		delete TheCimApplication;
+		Sessions.erase(loc);
+	}
+
+	if (Sessions.empty() && TheCimApplication.ft != nullptr)
+	{
+		OutputDebugString(L"Application deleted");
+		MI_Application_Close(&TheCimApplication);
+		TheCimApplication = MI_APPLICATION_NULL;
 	}
 }
 
@@ -50,6 +64,13 @@ const bool Session::Connect(wstring& ComputerName)
 const bool Session::Close()
 {
 	MI_Session_Close(CIMSession, NULL, NULL);
+	if (CIMSession == nullptr)
+		OutputDebugString(L"Close did it\r\n");
+	else
+	{
+		CIMSession = nullptr;
+		OutputDebugString(L"I had to do it\r\n");
+	}
 }
 
 #pragma region Operators

@@ -45,11 +45,14 @@ namespace CIMitar
 		static const wchar_t* FindMessage(const int Code) noexcept;
 	};
 
+	using ErrorStack = std::vector<Error>;
+
 	class CimBase
 	{
 	private:
 		Error LastError{};
 	protected:
+		ErrorStack Errors{};
 		inline void SetError(const int Code) { LastError.Code(Code); }
 	public:
 		const Error& GetLastError() { return LastError; }
@@ -84,6 +87,7 @@ namespace CIMitar
 		const bool Connect(std::wstring& ComputerName);
 		const bool Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol);
 		void StartLocalAsync();
+		void StartLocalAsync(SessionProtocols SessionProtocol);
 		void ConnectAsync(std::wstring& ComputerName);
 		void ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol);
 		const bool Reconnect();
