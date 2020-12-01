@@ -7,6 +7,7 @@
 #pragma comment(lib,"mi.lib")
 
 #include <Windows.h>
+#include <bitset>
 #include <codecvt>
 #include <locale>
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
@@ -64,8 +65,19 @@ namespace CIMitar
 	enum class SessionPrefixOverrides { NONE, HTTP, HTTPS };
 	enum class SessionPacketEncodingOptions { DEFAULT, UTF8, UTF16 };
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
+	enum class SessionErrorModes { NOTIFY, WAIT };
 
-	class SessionOptions
+	template <class T>
+	class SessionOption
+	{
+	private:
+		T value;
+	public:
+		SessionOption(T Value);
+		void Reset() noexcept;
+		const bool IsOverridden() const noexcept;
+	};
+	class SessionOptions :CimBase
 	{
 	private:
 		std::vector<MI_UserCredentials> TargetCredentials;
@@ -82,6 +94,8 @@ namespace CIMitar
 		bool PacketIntegrity{ false };
 		bool PacketPrivacy{ false };
 		SessionProxyOptions SessionProxyOption{ SessionProxyOptions::AUTO };
+		bool ProvideMachineName{ true };
+		SessionErrorModes SessionErrorMode{ SessionErrorModes::NOTIFY };
 		// string, number, transport, timeout
 		std::wstring OperationLocale{
 			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().from_bytes(
@@ -92,7 +106,7 @@ namespace CIMitar
 		std::wstring ComputerName;	// probably should not be part of the options
 		SessionProtocols Protocol = SessionProtocols::WSMAN;
 		bool UseHTTPS = false;
-	}
+	};
 
 	class Session :CimBase
 	{
