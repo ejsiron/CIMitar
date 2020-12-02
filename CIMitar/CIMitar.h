@@ -8,7 +8,7 @@
 
 #include <Windows.h>
 #include <bitset>
-//#include <codecvt>
+#include <ctime>
 #include <locale>
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
 #include <map>
@@ -83,8 +83,8 @@ namespace CIMitar
 	public:
 		void Reset() noexcept { overridden = false; }
 		T& get() noexcept { return value; }
-		void Set(T Value) { Value = value; overridden = true; }
-		void operator=(T Value) { Set(Value); }
+		void Set(T& Value) { Value = value; overridden = true; }
+		void operator=(T& Value) { Set(Value); }
 		const bool IsOverridden() const noexcept { return overridden; }
 	};
 	class SessionOptions :CimBase
@@ -152,6 +152,9 @@ namespace CIMitar
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
 #pragma endregion Session
+
+	tm& TMFromCIMTime(MI_Timestamp Timestamp);
+	MI_Timestamp& CIMTimeFromTM(tm& TM);
 
 #pragma region Initial type work
 
