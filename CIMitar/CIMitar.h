@@ -8,7 +8,7 @@
 
 #include <Windows.h>
 #include <bitset>
-#include <codecvt>
+//#include <codecvt>
 #include <locale>
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
 #include <map>
@@ -67,45 +67,63 @@ namespace CIMitar
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
 
-	template <class T>
+	template <typename T>
 	class SessionOption
 	{
 	private:
-		T value;
+		std::wstring customname{};
+		T value{};
+		bool overridden{ false };
+		// only the built-in SessionOptions class can create options
+		friend class SessionOptions;
+		SessionOption() {};
+		SessionOption(T Value) :value(Value) {}
+		SessionOption<std::wstring>(std::wstring CustomName, std::wstring Value) :customname(CustomName), value(Value), overridden(true) {}
+		SessionOption<unsigned int>(std::wstring CustomName, unsigned int Value) :customname(CustomName), value(Value), overridden(true) {}
 	public:
-		SessionOption(T Value);
-		void Reset() noexcept;
-		const bool IsOverridden() const noexcept;
+		void Reset() noexcept { overridden = false; }
+		T& get() noexcept { return value; }
+		void Set(T Value) { Value = value; overridden = true; }
+		void operator=(T Value) { Set(Value); }
+		const bool IsOverridden() const noexcept { return overridden; }
 	};
 	class SessionOptions :CimBase
 	{
 	private:
-		std::vector<MI_UserCredentials> TargetCredentials;
-		std::vector<MI_UserCredentials> ProxyCredentials;
-		bool CheckCACert{ false };
-		bool CheckCertCN{ false };
-		bool CheckCertRevocation{ false };
-		unsigned int OverridePort{ 0 };
-		bool EncodePortInSPN{ false };
-		SessionPrefixOverrides SessionPrefixOverride{ SessionPrefixOverrides::NONE };
-		MI_DestinationOptions_ImpersonationType ImpersonationType{ MI_DestinationOptions_ImpersonationType::MI_DestinationOptions_ImpersonationType_Default };
-		unsigned int MaxPacketSizeOverride{ 0 };
-		SessionPacketEncodingOptions SessionPacketEncoding{ SessionPacketEncodingOptions::DEFAULT };
-		bool PacketIntegrity{ false };
-		bool PacketPrivacy{ false };
-		SessionProxyOptions SessionProxyOption{ SessionProxyOptions::AUTO };
-		bool ProvideMachineName{ true };
-		SessionErrorModes SessionErrorMode{ SessionErrorModes::NOTIFY };
-		// string, number, transport, timeout
-		std::wstring OperationLocale{
-			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>().from_bytes(
-				std::locale("").name()
-			)
-		};
+		SessionOption<std::vector<MI_UserCredentials>> TargetCredentials{};
+		SessionOption<std::vector<MI_UserCredentials>> ProxyCredentials{};
+		std::vector<SessionOption<std::wstring>> CustomStringOptions{ std::vector<SessionOption<std::wstring>>(0) };
+		std::vector<SessionOption<unsigned int>> CustomNumberOptions{ std::vector<SessionOption<unsigned int>>(0) };
 	public:
-		std::wstring ComputerName;	// probably should not be part of the options
-		SessionProtocols Protocol = SessionProtocols::WSMAN;
-		bool UseHTTPS = false;
+		SessionOption<bool> CheckCACert{};
+		SessionOption<bool> CheckCertCN{};
+		SessionOption<bool> CheckCertRevocation{};
+		SessionOption<unsigned int> Port{};
+		SessionOption<bool> EncodePortInSPN{};
+		SessionOption<SessionPrefixOverrides> PrefixOverride{ SessionPrefixOverrides::NONE };
+		SessionOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ MI_DestinationOptions_ImpersonationType::MI_DestinationOptions_ImpersonationType_Default };
+		SessionOption<unsigned int> MaxPacketSizeOverride{};
+		SessionOption<SessionPacketEncodingOptions> PacketEncoding{ SessionPacketEncodingOptions::DEFAULT };
+		SessionOption<bool> PacketIntegrity{};
+		SessionOption<bool> PacketPrivacy{};
+		SessionOption<SessionProxyOptions> SessionProxyOption{ SessionProxyOptions::AUTO };
+		SessionOption<bool> ProvideMachineName{};
+		SessionOption<SessionErrorModes> SessionErrorMode{ SessionErrorModes::NOTIFY };
+		// timeout
+		SessionOption<std::wstring> OperationLocale{};
+		SessionOption<std::wstring> UILocale{};
+		SessionOption<SessionProtocols> Protocol{};
+		SessionOption<bool> UseHTTPS{};
+		void AddCustomOption(std::wstring Name, std::wstring Value);
+		void AddCustomOption(std::wstring Name, unsigned int Value);
+		void SetCustomOption(std::wstring Name, std::wstring Value);
+		void SetCustomOption(std::wstring Name, unsigned int Value);
+		void RemoveCustomStringOption(std::wstring Name);
+		void RemoveAllCustomStringOptions();
+		void RemoveCustomNumberOption(std::wstring Name);
+		void RemoveAllCustomNumberOptions();
+		void ResetAllOptions();
+		WORD wd;
 	};
 
 	class Session :CimBase
