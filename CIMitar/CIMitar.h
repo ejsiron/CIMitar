@@ -67,29 +67,29 @@ namespace CIMitar
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
 
-	template <typename T>
-	class SessionOption
-	{
-	private:
-		std::wstring customname{};
-		T value{};
-		bool overridden{ false };
-		// only the built-in SessionOptions class can create options
-		friend class SessionOptions;
-		SessionOption() {};
-		SessionOption(T Value) :value(Value) {}
-		SessionOption<std::wstring>(std::wstring CustomName, std::wstring Value) :customname(CustomName), value(Value), overridden(true) {}
-		SessionOption<unsigned int>(std::wstring CustomName, unsigned int Value) :customname(CustomName), value(Value), overridden(true) {}
-	public:
-		void Reset() noexcept { overridden = false; }
-		T& get() noexcept { return value; }
-		void Set(T& Value) { Value = value; overridden = true; }
-		void operator=(T& Value) { Set(Value); }
-		const bool IsOverridden() const noexcept { return overridden; }
-	};
 	class SessionOptions :CimBase
 	{
 	private:
+		template <typename T>
+		class SessionOption
+		{
+		private:
+			std::wstring customname;	// deliberately uninitialized since it has limited uses
+			T value{};
+			bool overridden{ false };
+		public:
+			SessionOption() {}
+			SessionOption(T Value) {}
+			SessionOption(T& Value) : value(Value) {}
+			SessionOption<std::wstring>(std::wstring CustomName, std::wstring Value) : customname(CustomName), value(Value), overridden(true) {}
+			SessionOption<unsigned int>(std::wstring CustomName, unsigned int Value) : customname(CustomName), value(Value), overridden(true) {}
+			void Reset() noexcept { overridden = false; }
+			T& get() noexcept { return value; }
+			void Set(T& Value) { Value = value; overridden = true; }
+			void operator=(T& Value) { Set(Value); }
+			const bool IsOverridden() const noexcept { return overridden; }
+		};
+
 		SessionOption<std::vector<MI_UserCredentials>> TargetCredentials{};
 		SessionOption<std::vector<MI_UserCredentials>> ProxyCredentials{};
 		std::vector<SessionOption<std::wstring>> CustomStringOptions{ std::vector<SessionOption<std::wstring>>(0) };
