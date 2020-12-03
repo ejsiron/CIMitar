@@ -67,6 +67,12 @@ namespace CIMitar
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
 
+	template <typename T = MI_UserCredentials>
+	class bacon
+	{
+		
+	};
+
 	class SessionOptions :CimBase
 	{
 	private:
@@ -74,20 +80,20 @@ namespace CIMitar
 		class SessionOption
 		{
 		private:
-			std::wstring customname;	// deliberately uninitialized since it has limited uses
+			std::wstring customname;	// deliberately uninitialized since it has limited use
 			T value{};
-			bool overridden{ false };
+			bool overrideflag{ false };
 		public:
 			SessionOption() {}
 			SessionOption(T Value) {}
 			SessionOption(T& Value) : value(Value) {}
-			SessionOption<std::wstring>(std::wstring CustomName, std::wstring Value) : customname(CustomName), value(Value), overridden(true) {}
-			SessionOption<unsigned int>(std::wstring CustomName, unsigned int Value) : customname(CustomName), value(Value), overridden(true) {}
-			void Reset() noexcept { overridden = false; }
+			SessionOption<std::wstring>(std::wstring CustomName, std::wstring Value) : customname(CustomName), value(Value), overrideflag(true) {}
+			SessionOption<unsigned int>(std::wstring CustomName, unsigned int Value) : customname(CustomName), value(Value), overrideflag(true) {}
+			void Reset() noexcept { overrideflag = false; }
 			T& get() noexcept { return value; }
-			void Set(T& Value) { Value = value; overridden = true; }
+			void Set(T& Value) { Value = value; overrideflag = true; }
 			void operator=(T& Value) { Set(Value); }
-			const bool IsOverridden() const noexcept { return overridden; }
+			const bool IsOverridden() const noexcept { return overrideflag; }
 		};
 
 		SessionOption<std::vector<MI_UserCredentials>> TargetCredentials{};
@@ -123,7 +129,6 @@ namespace CIMitar
 		void RemoveCustomNumberOption(std::wstring Name);
 		void RemoveAllCustomNumberOptions();
 		void ResetAllOptions();
-		WORD wd;
 	};
 
 	class Session :CimBase
