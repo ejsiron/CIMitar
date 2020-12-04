@@ -7,13 +7,13 @@
 #pragma comment(lib,"mi.lib")
 
 #include <Windows.h>
-#include <bitset>
 #include <ctime>
 #include <locale>
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
 #include <map>
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 
@@ -51,9 +51,9 @@ namespace CIMitar
 		constexpr UsernamePasswordCreds() noexcept {}
 		constexpr UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
 		constexpr UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
-		constexpr UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t Password) noexcept;
+		constexpr UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
 		~UsernamePasswordCreds();
-		const volatile MI_UsernamePasswordCreds operator()() const volatile noexcept;
+		volatile const MI_UsernamePasswordCreds operator()() const noexcept;
 	};
 
 	enum class AuthenticationTypes
@@ -74,12 +74,12 @@ namespace CIMitar
 	class UserCredentials
 	{
 	private:
-		std::wstring Username{};
-		wchar_t* Password = nullptr;
+		AuthenticationTypes authenticationtype = AuthenticationTypes::DEFAULT;
+		std::variant<UsernamePasswordCreds, std::wstring> credentials;
 	public:
 		constexpr UserCredentials() noexcept = default;
-		constexpr UserCredentials(MI_UserCredentials);
-		constexpr UserCredentials(std::wstring& UserName, wchar_t* Password);
+		constexpr UserCredentials(MI_UserCredentials) noexcept;
+		constexpr UserCredentials(std::wstring& UserName, wchar_t* Password) noexcept;
 		~UserCredentials();
 	};
 
