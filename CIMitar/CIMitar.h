@@ -16,6 +16,11 @@
 #include <string>
 #include <vector>
 
+
+#ifndef MI_USE_WCHAR
+#error CIMitar only functions with wide characters
+#endif
+
 namespace CIMitar
 {
 	class cimitar_exception
@@ -25,7 +30,8 @@ namespace CIMitar
 	public:
 		cimitar_exception(const unsigned int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
 		cimitar_exception(const unsigned int ErrorCode, const int OpCode, std::wstring MoreInformation)
-			:CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode), moreinformation(MoreInformation) {}
+			:CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode), moreinformation(MoreInformation)
+		{}
 		const int CIMErrorCode{ -1 };
 		const int CIMitarOperationCode{ -1 };
 		const wchar_t* Message() const noexcept;
@@ -33,6 +39,51 @@ namespace CIMitar
 		const wchar_t* what() const noexcept { return Message(); }
 		const std::wstring& MoreInformation() const noexcept { return moreinformation; }
 	};
+
+#pragma region MI type encapsulation
+	class UsernamePasswordCreds
+	{
+	private:
+		std::wstring domain{};
+		std::wstring username{};
+		wchar_t* password = nullptr;
+	public:
+		constexpr UsernamePasswordCreds() noexcept {}
+		constexpr UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		constexpr UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
+		constexpr UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t Password) noexcept;
+		~UsernamePasswordCreds();
+		const volatile MI_UsernamePasswordCreds operator()() const volatile noexcept;
+	};
+
+	enum class AuthenticationTypes
+	{
+		DEFAULT,
+		NONE,
+		DIGEST,
+		NEGO_WITH_CREDS,
+		NEGO_NO_CREDS,
+		BASIC,
+		KERBEROS,
+		CLIENT_CERTS,
+		NTLM,
+		CREDSSP,
+		ISSUERCERT
+	};
+
+	class UserCredentials
+	{
+	private:
+		std::wstring Username{};
+		wchar_t* Password = nullptr;
+	public:
+		constexpr UserCredentials() noexcept = default;
+		constexpr UserCredentials(MI_UserCredentials);
+		constexpr UserCredentials(std::wstring& UserName, wchar_t* Password);
+		~UserCredentials();
+	};
+
+#pragma endregion
 
 	class Error
 	{
@@ -66,12 +117,6 @@ namespace CIMitar
 	enum class SessionPacketEncodingOptions { DEFAULT, UTF8, UTF16 };
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
-
-	template <typename T = MI_UserCredentials>
-	class bacon
-	{
-		
-	};
 
 	class SessionOptions :CimBase
 	{
