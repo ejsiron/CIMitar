@@ -1,25 +1,24 @@
 #include "CIMitar.h"
+#include <algorithm>
 #include <cstring>
 
 using namespace CIMitar;
 
-static volatile wchar_t* ObliterateString(wchar_t* TargetStringAddress)
+// "volatile" to hopefully prevent the compiler from optimizing this call away during destruction
+static volatile void* ObliterateString(std::unique_ptr<wchar_t[]>& DoomedString)
 {
-	if (TargetStringAddress != nullptr)
+	if (DoomedString != nullptr)
 	{
-		wmemset(TargetStringAddress, 0, wcslen(TargetStringAddress));
+		auto StringLength = wcslen(DoomedString.get()) + 1;
+		SecureZeroMemory(DoomedString.get(), StringLength * 2);
 	}
-	return TargetStringAddress;
 }
 
-// TODO: make more robust
-// low priority on the assumption that if the system can't allocate enough bytes for a password that it has bigger problems than
-// an inability to feed credentials into an MI session
 static std::unique_ptr<wchar_t[]> CopyPassword(const wchar_t* Source) noexcept
 {
 	auto PasswordBufferLength = wcslen(Source) + 1;
 	std::unique_ptr<wchar_t[]> Destination{ std::make_unique<wchar_t[]>(PasswordBufferLength) };
-	ObliterateString(Destination.get());
+	ObliterateString(Destination);
 	wcscpy_s(Destination.get(), PasswordBufferLength, Source);
 	return Destination;
 }
@@ -45,9 +44,31 @@ constexpr UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Domain
 	password = CopyPassword(Password);
 }
 
+constexpr UsernamePasswordCreds::UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept
+{
+	*this = copysource;
+}
+
+constexpr UsernamePasswordCreds& UsernamePasswordCreds::operator=(const UsernamePasswordCreds& copysource) noexcept
+{
+	this->domain = copysource.domain;
+	this->username = copysource.username;
+	this->password = CopyPassword(copysource.password.get());
+	return *this;
+}
+
+constexpr UsernamePasswordCreds::UsernamePasswordCreds(UsernamePasswordCreds&& movesource) noexcept
+{
+	*this = std::move(movesource);
+}
+constexpr UsernamePasswordCreds& UsernamePasswordCreds::operator=(UsernamePasswordCreds&& movesource) noexcept
+{
+	UsernamePasswordCreds tmp = movesource;
+}
+
 UsernamePasswordCreds::~UsernamePasswordCreds()
 {
-	ObliterateString(password.get());
+	ObliterateString(password);
 }
 
 volatile const MI_UsernamePasswordCreds UsernamePasswordCreds::operator()() const noexcept

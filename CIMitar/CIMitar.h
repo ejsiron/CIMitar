@@ -46,7 +46,6 @@ namespace CIMitar
 	private:
 		std::wstring domain{};
 		std::wstring username{};
-		std::basic_string<wchar_t> pw2{};
 		std::unique_ptr<wchar_t[]> password{ nullptr };	// memory securely wiped at destruction, but not protected in-memory
 	public:
 		constexpr UsernamePasswordCreds() noexcept {}
