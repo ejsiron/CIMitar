@@ -46,15 +46,24 @@ namespace CIMitar
 	private:
 		std::wstring domain{};
 		std::wstring username{};
-		wchar_t* password = nullptr;
+		std::basic_string<wchar_t> pw2{};
+		std::unique_ptr<wchar_t[]> password{ nullptr };	// memory securely wiped at destruction, but not protected in-memory
 	public:
 		constexpr UsernamePasswordCreds() noexcept {}
 		constexpr UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
 		constexpr UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
 		constexpr UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
+		constexpr UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept;
+		constexpr UsernamePasswordCreds& operator=(const UsernamePasswordCreds& copysource) noexcept;
+		constexpr UsernamePasswordCreds(UsernamePasswordCreds&& movesource) noexcept;
+		constexpr UsernamePasswordCreds& operator=(UsernamePasswordCreds&& movesource) noexcept;
+		friend const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 		~UsernamePasswordCreds();
 		volatile const MI_UsernamePasswordCreds operator()() const noexcept;
 	};
+
+	const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
+	const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 
 	enum class AuthenticationTypes
 	{
@@ -79,8 +88,6 @@ namespace CIMitar
 	public:
 		constexpr UserCredentials() noexcept = default;
 		constexpr UserCredentials(MI_UserCredentials) noexcept;
-		constexpr UserCredentials(std::wstring& UserName, wchar_t* Password) noexcept;
-		~UserCredentials();
 	};
 
 #pragma endregion
