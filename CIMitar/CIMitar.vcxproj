@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClCompile Include="cimtype.cpp" />
     <ClCompile Include="error.cpp" />
+    <ClCompile Include="time.cpp" />
     <ClCompile Include="session.cpp" />
     <ClCompile Include="element.cpp" />
     <ClCompile Include="errorhandler.cpp" />

@@ -40,6 +40,20 @@ namespace CIMitar
 	};
 
 #pragma region MI type encapsulation
+	class Interval
+	{
+	public:
+		unsigned int Days{ 0 };
+		unsigned int Hours{ 0 };
+		unsigned int Minutes{ 0 };
+		unsigned int Seconds{ 0 };
+		unsigned int Microseconds{ 0 };
+		constexpr Interval() noexcept = default;
+		constexpr Interval(MI_Interval* MIInterval) noexcept;
+		const MI_Interval& operator()() noexcept;
+	};
+	const bool operator==(Interval& lhs, Interval& rhs) noexcept;
+
 	class UsernamePasswordCreds
 	{
 	private:
