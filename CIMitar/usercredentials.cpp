@@ -57,21 +57,29 @@ constexpr UsernamePasswordCreds& UsernamePasswordCreds::operator=(const Username
 	return *this;
 }
 
-constexpr UsernamePasswordCreds::UsernamePasswordCreds(UsernamePasswordCreds&& movesource) noexcept
-{
-	*this = std::move(movesource);
-}
-constexpr UsernamePasswordCreds& UsernamePasswordCreds::operator=(UsernamePasswordCreds&& movesource) noexcept
-{
-	UsernamePasswordCreds tmp = movesource;
-}
-
 UsernamePasswordCreds::~UsernamePasswordCreds()
 {
 	ObliterateString(password);
+}
+
+const bool CIMitar::operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept
+{
+	return
+		lhs.domain == rhs.domain &&
+		lhs.username == rhs.username;
+}
+
+const bool CIMitar::operator!=(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept
+{
+	return !(lhs == rhs);
 }
 
 volatile const MI_UsernamePasswordCreds UsernamePasswordCreds::operator()() const noexcept
 {
 	return MI_UsernamePasswordCreds{ domain.c_str(), username.c_str(), password.get() };
 }
+//
+//constexpr UserCredentials::UserCredentials(MI_UserCredentials) noexcept
+//{
+//
+//}

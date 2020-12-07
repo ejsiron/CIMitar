@@ -16,7 +16,6 @@
 #include <variant>
 #include <vector>
 
-
 #ifndef MI_USE_WCHAR
 #error CIMitar only functions with wide characters
 #endif
@@ -28,8 +27,8 @@ namespace CIMitar
 	private:
 		const std::wstring moreinformation{};
 	public:
-		cimitar_exception(const unsigned int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
-		cimitar_exception(const unsigned int ErrorCode, const int OpCode, std::wstring MoreInformation)
+		constexpr cimitar_exception(const unsigned int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
+		cimitar_exception(const unsigned int ErrorCode, const int OpCode, const std::wstring& MoreInformation)
 			:CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode), moreinformation(MoreInformation)
 		{}
 		const int CIMErrorCode{ -1 };
@@ -54,15 +53,14 @@ namespace CIMitar
 		constexpr UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
 		constexpr UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept;
 		constexpr UsernamePasswordCreds& operator=(const UsernamePasswordCreds& copysource) noexcept;
-		constexpr UsernamePasswordCreds(UsernamePasswordCreds&& movesource) noexcept;
-		constexpr UsernamePasswordCreds& operator=(UsernamePasswordCreds&& movesource) noexcept;
 		friend const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 		~UsernamePasswordCreds();
 		volatile const MI_UsernamePasswordCreds operator()() const noexcept;
 	};
 
+	// only compares domain & username to prevent password leaks
 	const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
-	const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
+	const bool operator!=(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 
 	enum class AuthenticationTypes
 	{
@@ -86,7 +84,7 @@ namespace CIMitar
 		std::variant<UsernamePasswordCreds, std::wstring> credentials;
 	public:
 		constexpr UserCredentials() noexcept = default;
-		constexpr UserCredentials(MI_UserCredentials) noexcept;
+		constexpr UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(UsernamePasswordCreds(Credentials)) {}
 	};
 
 #pragma endregion
@@ -135,11 +133,11 @@ namespace CIMitar
 			T value{};
 			bool overrideflag{ false };
 		public:
-			SessionOption() {}
-			SessionOption(T Value) {}
-			SessionOption(T& Value) : value(Value) {}
-			SessionOption<std::wstring>(std::wstring CustomName, std::wstring Value) : customname(CustomName), value(Value), overrideflag(true) {}
-			SessionOption<unsigned int>(std::wstring CustomName, unsigned int Value) : customname(CustomName), value(Value), overrideflag(true) {}
+			constexpr SessionOption() noexcept {}
+			constexpr SessionOption(T Value) noexcept {}
+			constexpr SessionOption(T& Value) : value(Value) noexcept {}
+			constexpr SessionOption(std::wstring CustomName, T Value) : customname(CustomName), value(Value), overrideflag(true) noexcept {}
+
 			void Reset() noexcept { overrideflag = false; }
 			T& get() noexcept { return value; }
 			void Set(T& Value) { Value = value; overrideflag = true; }
@@ -147,8 +145,8 @@ namespace CIMitar
 			const bool IsOverridden() const noexcept { return overrideflag; }
 		};
 
-		SessionOption<std::vector<MI_UserCredentials>> TargetCredentials{};
-		SessionOption<std::vector<MI_UserCredentials>> ProxyCredentials{};
+		SessionOption<std::vector<UserCredentials>> TargetCredentials{};
+		SessionOption<std::vector<UserCredentials>> ProxyCredentials{};
 		std::vector<SessionOption<std::wstring>> CustomStringOptions{ std::vector<SessionOption<std::wstring>>(0) };
 		std::vector<SessionOption<unsigned int>> CustomNumberOptions{ std::vector<SessionOption<unsigned int>>(0) };
 	public:
@@ -179,6 +177,7 @@ namespace CIMitar
 		void RemoveAllCustomStringOptions();
 		void RemoveCustomNumberOption(std::wstring Name);
 		void RemoveAllCustomNumberOptions();
+		void RemoveAllCustomOptions();
 		void ResetAllOptions();
 	};
 
