@@ -50,9 +50,32 @@ namespace CIMitar
 		unsigned int Microseconds{ 0 };
 		constexpr Interval() noexcept = default;
 		constexpr Interval(MI_Interval* MIInterval) noexcept;
-		const MI_Interval& operator()() noexcept;
+		const MI_Interval& ToMIInterval() const noexcept;
+		const MI_Timestamp& ToMITimestamp() const noexcept;
 	};
-	const bool operator==(Interval& lhs, Interval& rhs) noexcept;
+
+	const bool operator==(const MI_Interval& lhs, const MI_Interval& rhs) noexcept;
+	const bool operator==(const Interval& lhs, const Interval& rhs) noexcept;
+
+	class Timestamp
+	{
+	public:
+		unsigned int Year{ 0 };
+		unsigned int Month{ 0 };
+		unsigned int Day{ 0 };
+		unsigned int Hour{ 0 };
+		unsigned int Minute{ 0 };
+		unsigned int Second{ 0 };
+		unsigned int Microseconds{ 0 };
+		int UTCOffset{ 0 };
+		constexpr Timestamp() noexcept = default;
+		constexpr Timestamp(MI_Timestamp* MITimestamp) noexcept;
+		const MI_Timestamp& ToMITimestamp() const noexcept;
+		const MI_Interval& ToMIInterval() const noexcept;
+	};
+
+	const bool operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept;
+	const bool operator==(const Timestamp& lhs, const Timestamp& rhs) noexcept;
 
 	class UsernamePasswordCreds
 	{
@@ -136,7 +159,7 @@ namespace CIMitar
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
 
-	class SessionOptions :CimBase
+	class SessionOptions
 	{
 	private:
 		template <typename T>
@@ -178,7 +201,7 @@ namespace CIMitar
 		SessionOption<SessionProxyOptions> SessionProxyOption{ SessionProxyOptions::AUTO };
 		SessionOption<bool> ProvideMachineName{};
 		SessionOption<SessionErrorModes> SessionErrorMode{ SessionErrorModes::NOTIFY };
-		// timeout
+		SessionOption<Interval> Timeout {};
 		SessionOption<std::wstring> OperationLocale{};
 		SessionOption<std::wstring> UILocale{};
 		SessionOption<SessionProtocols> Protocol{};
@@ -195,7 +218,7 @@ namespace CIMitar
 		void ResetAllOptions();
 	};
 
-	class Session :CimBase
+	class Session
 	{
 	private:
 		unsigned long long SessionID = 0;
