@@ -83,6 +83,9 @@
     <ClCompile Include="time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sessionoption.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Architecture.txt" />

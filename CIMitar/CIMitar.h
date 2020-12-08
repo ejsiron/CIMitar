@@ -77,6 +77,9 @@ namespace CIMitar
 	const bool operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept;
 	const bool operator==(const Timestamp& lhs, const Timestamp& rhs) noexcept;
 
+	tm& TMFromCIMTime(MI_Timestamp Timestamp);
+	MI_Timestamp& CIMTimeFromTM(tm& TM);
+
 	class UsernamePasswordCreds
 	{
 	private:
@@ -184,8 +187,8 @@ namespace CIMitar
 
 		SessionOption<std::vector<UserCredentials>> TargetCredentials{};
 		SessionOption<std::vector<UserCredentials>> ProxyCredentials{};
-		std::vector<SessionOption<std::wstring>> CustomStringOptions{ std::vector<SessionOption<std::wstring>>(0) };
-		std::vector<SessionOption<unsigned int>> CustomNumberOptions{ std::vector<SessionOption<unsigned int>>(0) };
+		std::map <std::wstring, SessionOption<std::wstring>> CustomStringOptions{};
+		std::map <std::wstring, SessionOption<unsigned int>> CustomNumberOptions{};
 	public:
 		SessionOption<bool> CheckCACert{};
 		SessionOption<bool> CheckCertCN{};
@@ -201,7 +204,7 @@ namespace CIMitar
 		SessionOption<SessionProxyOptions> SessionProxyOption{ SessionProxyOptions::AUTO };
 		SessionOption<bool> ProvideMachineName{};
 		SessionOption<SessionErrorModes> SessionErrorMode{ SessionErrorModes::NOTIFY };
-		SessionOption<Interval> Timeout {};
+		SessionOption<Interval> Timeout{};
 		SessionOption<std::wstring> OperationLocale{};
 		SessionOption<std::wstring> UILocale{};
 		SessionOption<SessionProtocols> Protocol{};
@@ -244,9 +247,6 @@ namespace CIMitar
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
 #pragma endregion Session
-
-	tm& TMFromCIMTime(MI_Timestamp Timestamp);
-	MI_Timestamp& CIMTimeFromTM(tm& TM);
 
 #pragma region Initial type work
 
