@@ -77,3 +77,19 @@ const bool CIMitar::operator==(const Timestamp& lhs, const Timestamp& rhs) noexc
 {
 	return lhs.ToMITimestamp() == rhs.ToMITimestamp();
 }
+
+
+/*
+Conversion functions
+Philosophy: working through FILETIME structures means the computer does the work
+ instead of us needing to handroll a lot of specialized code. This library's goal
+ is to make CIM interactions simpler, not handle bulk time calculations.
+*/
+
+// FILETIME multipliers -- 1 FILETIME == 100 NANOSECONDS
+
+tm& CIMitar::TMFromCIMTime(MI_Timestamp& Timestamp) noexcept
+{
+	tm ConvertedTM{};
+	time_t Convertt{};
+}

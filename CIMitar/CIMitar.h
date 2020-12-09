@@ -77,8 +77,8 @@ namespace CIMitar
 	const bool operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept;
 	const bool operator==(const Timestamp& lhs, const Timestamp& rhs) noexcept;
 
-	tm& TMFromCIMTime(MI_Timestamp Timestamp);
-	MI_Timestamp& CIMTimeFromTM(tm& TM);
+	tm& TMFromCIMTime(MI_Timestamp& Timestamp) noexcept;
+	MI_Timestamp& CIMTimeFromTM(tm& TM) noexcept;
 
 	class UsernamePasswordCreds
 	{
