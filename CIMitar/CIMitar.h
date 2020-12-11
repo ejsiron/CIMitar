@@ -248,6 +248,34 @@ namespace CIMitar
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
 #pragma endregion Session
 
+	class OperationOptions
+	{
+	private:
+		template <typename T>
+		class OperationOption
+		{
+
+		};
+	};
+
+	template <typename SubscriberType, typename ReturnType>
+	class CIMOperatorBase
+	{
+	private:
+		std::wstring cimnamespace;
+		bool keysonly{ false };
+	protected:
+		constexpr wchar_t[] QueryLanguage = L"WQL";
+		Session session;
+		void CIMOperatorBase(Session& OperatingSession, std::wstring& Namespace);
+		virtual void ReportError();
+		virtual void ReportResult(ReturnType retval);
+		virtual void ReportCompletion();
+	public:
+		const bool IsRunning();
+		void Cancel();
+	};
+
 #pragma region Initial type work
 
 	enum class CIMType

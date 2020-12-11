@@ -1,3 +1,4 @@
+#include <timezoneapi.h>
 #include "CIMitar.h"
 
 using namespace CIMitar;
@@ -101,7 +102,6 @@ constexpr void CleanTM(tm& TM) noexcept
 #pragma warning(pop)
 }
 
-// todo: deal with UTC
 tm CIMitar::TMFromCIMTime(const MI_Timestamp& Timestamp) noexcept
 {
 	tm TM{};
@@ -117,7 +117,6 @@ tm CIMitar::TMFromCIMTime(const MI_Timestamp& Timestamp) noexcept
 	return TM;
 }
 
-// todo: deal with UTC
 MI_Timestamp CIMitar::CIMTimeFromTM(const tm& TM) noexcept
 {
 	tm internaltm{ TM }; // to honor const tm&
@@ -129,13 +128,16 @@ MI_Timestamp CIMitar::CIMTimeFromTM(const tm& TM) noexcept
 	stamp.hour = internaltm.tm_hour;
 	stamp.minute = internaltm.tm_min;
 	stamp.second = internaltm.tm_sec;
+	TIME_ZONE_INFORMATION tzi{};
+	GetTimeZoneInformation(&tzi);	// taking odds that the infrequency of calling this function justifies ensuring that any changes in UTC offset are caught
+	stamp.utc = tzi.Bias;
 	return stamp;
 }
 
-// FILETIME multipliers -- 1 FILETIME == 100 NANOSECONDS
-constexpr unsigned long long FileTime_Microsecond{ 10ull };
-constexpr unsigned long long FileTime_Millisecond{ 1000ull * FileTime_Microsecond };
-constexpr unsigned long long FileTime_Second{ 1000ull * FileTime_Millisecond };
-constexpr unsigned long long FileTime_Minute{ 60ull * FileTime_Second };
-constexpr unsigned long long FileTime_Hour{ 60ull * FileTime_Minute };
-constexpr unsigned long long FileTime_Day{ 24ull * FileTime_Hour };
+// FILETIME multipliers -- 1 FILETIME == 100 NANOSECONDS; unused at this time
+//constexpr unsigned long long FileTime_Microsecond{ 10ull };
+//constexpr unsigned long long FileTime_Millisecond{ 1000ull * FileTime_Microsecond };
+//constexpr unsigned long long FileTime_Second{ 1000ull * FileTime_Millisecond };
+//constexpr unsigned long long FileTime_Minute{ 60ull * FileTime_Second };
+//constexpr unsigned long long FileTime_Hour{ 60ull * FileTime_Minute };
+//constexpr unsigned long long FileTime_Day{ 24ull * FileTime_Hour };
