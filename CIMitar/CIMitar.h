@@ -22,6 +22,12 @@
 
 namespace CIMitar
 {
+	enum CallbackModes
+	{
+		Report,
+		Inquire
+	};
+
 	class cimitar_exception
 	{
 	private:
@@ -124,7 +130,10 @@ namespace CIMitar
 		std::variant<UsernamePasswordCreds, std::wstring> credentials;
 	public:
 		constexpr UserCredentials() noexcept = default;
-		constexpr UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(UsernamePasswordCreds(Credentials)) {}
+		constexpr UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(std::move(UsernamePasswordCreds(Credentials))) {}
+		constexpr UserCredentials(const std::wstring& CertificateThumbprint) noexcept : credentials(CertificateThumbprint) {}
+		// add UsernamePasswordCreds constructor
+		// add member access
 	};
 
 #pragma endregion
@@ -162,85 +171,97 @@ namespace CIMitar
 	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
 
+	template <typename T>
+	class Option
+	{
+	private:
+		std::wstring customname;	// deliberately uninitialized since it has limited use
+		T value{};
+		bool overrideflag{ false };
+	public:
+		constexpr Option()noexcept {}
+		constexpr Option(T Value) noexcept {}
+		constexpr Option(T& Value) noexcept {}
+		constexpr Option(std::wstring CustomName, T Value) :customname(CustomName), value(Value) {}
+		void Reset() noexcept { overrideflag = false; }
+		T& get() noexcept { return value; }
+		void Set(T& Value) { Value = value; overrideflag = true; }
+		void operator=(T& Value) { Set(Value); }
+		const bool IsOverridden() const noexcept { return overrideflag; }
+	};
+
+	class WithOptions
+	{
+	private:
+		std::map <std::wstring, Option<std::wstring>> CustomStringOptions{};
+		std::map <std::wstring, Option<unsigned int>> CustomNumberOptions{};
+	protected:
+		constexpr WithOptions() = default;
+	public:
+		constexpr WithOptions(const WithOptions&) = default;
+		WithOptions& operator=(const WithOptions&) = default;
+		constexpr WithOptions(WithOptions&&) = default;
+		WithOptions& operator=(WithOptions&&) = default;
+		void AddCustom(std::wstring Name, std::wstring Value);
+		void AddCustom(std::wstring Name, unsigned int Value);
+		void SetCustom(std::wstring Name, std::wstring Value);
+		void SetCustom(std::wstring Name, unsigned int Value);
+		void RemoveCustomString(std::wstring Name);
+		void RemoveAllCustomStrings();
+		void RemoveCustomNumber(std::wstring Name);
+		void RemoveAllCustomNumbers();
+		void RemoveAllCustom();
+		void ResetAll();
+	};
+
 	class SessionOptions
 	{
 	private:
-		template <typename T>
-		class SessionOption
-		{
-		private:
-			std::wstring customname;	// deliberately uninitialized since it has limited use
-			T value{};
-			bool overrideflag{ false };
-		public:
-			constexpr SessionOption() noexcept {}
-			constexpr SessionOption(T Value) noexcept {}
-			constexpr SessionOption(T& Value) : value(Value) noexcept {}
-			constexpr SessionOption(std::wstring CustomName, T Value) : customname(CustomName), value(Value), overrideflag(true) noexcept {}
+		std::vector<UserCredentials> TargetCredentials{};
+		std::vector<UserCredentials> ProxyCredentials{};
 
-			void Reset() noexcept { overrideflag = false; }
-			T& get() noexcept { return value; }
-			void Set(T& Value) { Value = value; overrideflag = true; }
-			void operator=(T& Value) { Set(Value); }
-			const bool IsOverridden() const noexcept { return overrideflag; }
-		};
-
-		SessionOption<std::vector<UserCredentials>> TargetCredentials{};
-		SessionOption<std::vector<UserCredentials>> ProxyCredentials{};
-		std::map <std::wstring, SessionOption<std::wstring>> CustomStringOptions{};
-		std::map <std::wstring, SessionOption<unsigned int>> CustomNumberOptions{};
 	public:
-		SessionOption<bool> CheckCACert{};
-		SessionOption<bool> CheckCertCN{};
-		SessionOption<bool> CheckCertRevocation{};
-		SessionOption<unsigned int> Port{};
-		SessionOption<bool> EncodePortInSPN{};
-		SessionOption<SessionPrefixOverrides> PrefixOverride{ SessionPrefixOverrides::NONE };
-		SessionOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ MI_DestinationOptions_ImpersonationType::MI_DestinationOptions_ImpersonationType_Default };
-		SessionOption<unsigned int> MaxPacketSizeOverride{};
-		SessionOption<SessionPacketEncodingOptions> PacketEncoding{ SessionPacketEncodingOptions::DEFAULT };
-		SessionOption<bool> PacketIntegrity{};
-		SessionOption<bool> PacketPrivacy{};
-		SessionOption<SessionProxyOptions> SessionProxyOption{ SessionProxyOptions::AUTO };
-		SessionOption<bool> ProvideMachineName{};
-		SessionOption<SessionErrorModes> SessionErrorMode{ SessionErrorModes::NOTIFY };
-		SessionOption<Interval> Timeout{};
-		SessionOption<std::wstring> OperationLocale{};
-		SessionOption<std::wstring> UILocale{};
-		SessionOption<SessionProtocols> Protocol{};
-		SessionOption<bool> UseHTTPS{};
-		void AddCustomOption(std::wstring Name, std::wstring Value);
-		void AddCustomOption(std::wstring Name, unsigned int Value);
-		void SetCustomOption(std::wstring Name, std::wstring Value);
-		void SetCustomOption(std::wstring Name, unsigned int Value);
-		void RemoveCustomStringOption(std::wstring Name);
-		void RemoveAllCustomStringOptions();
-		void RemoveCustomNumberOption(std::wstring Name);
-		void RemoveAllCustomNumberOptions();
-		void RemoveAllCustomOptions();
-		void ResetAllOptions();
+		Option<bool> CheckCACert{};
+		Option<bool> CheckCertCN{};
+		Option<bool> CheckCertRevocation{};
+		Option<unsigned int> Port{};
+		Option<bool> EncodePortInSPN{};
+		Option<SessionPrefixOverrides> PrefixOverride{ SessionPrefixOverrides::NONE };
+		Option<MI_DestinationOptions_ImpersonationType> ImpersonationType{ MI_DestinationOptions_ImpersonationType::MI_DestinationOptions_ImpersonationType_Default };
+		Option<unsigned int> MaxPacketSizeOverride{};
+		Option<SessionPacketEncodingOptions> PacketEncoding{ SessionPacketEncodingOptions::DEFAULT };
+		Option<bool> PacketIntegrity{};
+		Option<bool> PacketPrivacy{};
+		Option<SessionProxyOptions> SessionProxyOption{ SessionProxyOptions::AUTO };
+		Option<bool> ProvideMachineName{};
+		Option<SessionErrorModes> SessionErrorMode{ SessionErrorModes::NOTIFY };
+		Option<Interval> Timeout{};
+		Option<std::wstring> OperationLocale{};
+		Option<std::wstring> UILocale{};
+		Option<SessionProtocols> Protocol{};
+		Option<bool> UseHTTPS{};
+		void AddTargetCredentials(const UserCredentials& Credentials) noexcept;
+		void AddTargetCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		void AddProxyCredentials(const UserCredentials& Credentials) noexcept;
+		void AddProxyCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		void ClearTargetCredentials() noexcept;
+		void ClearProxyCredentials() noexcept;
 	};
 
-	class Session
+	class Session :WithOptions
 	{
 	private:
 		unsigned long long SessionID = 0;
 		MI_Session* CIMSession = nullptr;
 		static std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>> Sessions;
-		// TODO: add tracking mechanism for operations
+		// TODO: add accounting mechanism for operations
 	public:
 		Session(std::wstring& ComputerName);
 		virtual ~Session();
-		const bool StartLocal(SessionProtocols SessionProtocol = SessionProtocols::DCOM);
-		const bool Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol = SessionProtocols::WSMAN);
-		void StartLocalAsync(SessionProtocols SessionProtocol = SessionProtocols::DCOM);
-		void ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol = SessionProtocols::WSMAN);
-		const bool Reconnect();
-		void ReconnectAsync();
+		SessionOptions Options{};
 
 		/* Do not call from an asynchronous callback! Use CloseAsync instead! */
 		const bool Close();
-
 		/* Do not call from a synchronous method! Use Close instead! */
 		void CloseAsync();
 	};
@@ -248,33 +269,49 @@ namespace CIMitar
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
 #pragma endregion Session
 
-	class OperationOptions
+#pragma region Operator
+	enum class OperatorMessageChannels
 	{
-	private:
-		template <typename T>
-		class OperationOption
-		{
+		Warning,
+		Verbose,
+		Debug
+	};
 
-		};
+	class OperatorOptions
+	{
+	public:
+		Option<bool> WarningMessageChannel{ true };
+		Option<bool> VerboseMessageChannel{ false };
+		Option<bool> DebugMessageChannel{ false };
+		Option<CallbackModes> PromptUserMode{ Report };
+		Option<CallbackModes> PromptUserRegularMode{ Report };
+		Option<CallbackModes> WriteErrorMode{ Report };
+		Option<bool> Force32Bit{ false };
+		Option<std::wstring> ResourceURI{};
+		Option<std::wstring> ResourceURIPrefix{};
+		Option<Interval> Timeout{};
+		Option<bool> ProvideMachineID{ false };
 	};
 
 	template <typename SubscriberType, typename ReturnType>
-	class CIMOperatorBase
+	class CIMOperatorBase :WithOptions
 	{
 	private:
 		std::wstring cimnamespace;
 		bool keysonly{ false };
 	protected:
 		constexpr wchar_t[] QueryLanguage = L"WQL";
-		Session session;
+		Session& session;
 		void CIMOperatorBase(Session& OperatingSession, std::wstring& Namespace);
-		virtual void ReportError();
-		virtual void ReportResult(ReturnType retval);
-		virtual void ReportCompletion();
+		virtual void ReportError() void;
+		virtual void ReportResult(ReturnType retval) void;
+		virtual void ReportCompletion() void;
 	public:
+		OperatorOptions Options{};
 		const bool IsRunning();
 		void Cancel();
 	};
+#pragma endregion Operator
 
 #pragma region Initial type work
 

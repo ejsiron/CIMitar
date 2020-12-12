@@ -46,15 +46,6 @@ Session::~Session()
 	}
 }
 
-const bool Session::StartLocal(){}
-const bool Session::StartLocal(SessionProtocols SessionProtocol){}
-const bool Session::Connect(std::wstring& ComputerName){}
-const bool Session::Connect(std::wstring& ComputerName, SessionProtocols SessionProtocol){}
-void Session::StartLocalAsync(){}
-void Session::StartLocalAsync(SessionProtocols SessionProtocol){}
-void Session::ConnectAsync(std::wstring& ComputerName){}
-void Session::ConnectAsync(std::wstring& ComputerName, SessionProtocols SessionProtocol){}
-
 const bool Session::Close()
 {
 	MI_Session_Close(CIMSession, NULL, NULL);
