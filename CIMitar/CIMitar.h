@@ -126,7 +126,7 @@ namespace CIMitar
 	class UserCredentials
 	{
 	private:
-		AuthenticationTypes authenticationtype = AuthenticationTypes::DEFAULT;
+		AuthenticationTypes authenticationtype{ AuthenticationTypes::DEFAULT };
 		std::variant<UsernamePasswordCreds, std::wstring> credentials;
 	public:
 		constexpr UserCredentials() noexcept = default;
@@ -256,17 +256,17 @@ namespace CIMitar
 		static std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>> Sessions;
 		// TODO: add accounting mechanism for operations
 	public:
-		Session(std::wstring& ComputerName);
+		Session();
 		virtual ~Session();
 		SessionOptions Options{};
-
-		/* Do not call from an asynchronous callback! Use CloseAsync instead! */
-		const bool Close();
-		/* Do not call from a synchronous method! Use Close instead! */
-		void CloseAsync();
+		const bool Connect();
+		void Disconnect();
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
+
+	const bool ConnectSession(Session& Session);
+	const bool ConnectionSessionAsync(Session& Session);
 #pragma endregion Session
 
 #pragma region Operator
