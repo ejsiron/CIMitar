@@ -251,12 +251,11 @@ namespace CIMitar
 	class Session :WithOptions
 	{
 	private:
-		unsigned long long SessionID = 0;
 		MI_Session* CIMSession = nullptr;
-		static std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>> Sessions;
+		std::wstring ComputerName;
 		// TODO: add accounting mechanism for operations
 	public:
-		Session();
+		Session(const std::wstring& ComputerName = std::wstring());
 		virtual ~Session();
 		SessionOptions Options{};
 		const bool Connect();

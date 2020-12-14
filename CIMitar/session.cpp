@@ -1,43 +1,44 @@
 #include "stdafx.h"
 #include "CIMitar.h"
+#include <algorithm>
+#include <list>
+#include <mutex>
 
 using namespace std;
 using namespace CIMitar;
 
+#pragma region Housekeeping
+/***************************************************************************
+*
+* These items must exist but never need to be visible to library consumers
+*
+***************************************************************************/
+
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
-static unsigned long long NextIndex = 0;
-std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>> Session::Sessions
-{ std::map<unsigned long long, std::weak_ptr<Session>, std::greater<unsigned long long>>() };
+static list<Session*> Sessions{};
+static mutex SessionListMutex{};
+#pragma endregion Housekeeping
 
 static MI_Session* NewCimSession(const wchar_t* ComputerName, SessionProtocols Protocol)
 {
 	//MI_Application_NewSession()
 }
 
-Session::Session(std::wstring& ComputerName)
+Session::Session(const wstring& ComputerName)
 {
+	lock_guard<std::mutex> SessionListAccessGuard(SessionListMutex);
 	if (Sessions.empty())
 	{
-		//std::vector<MI_Instance*> AppInitErrors(1);
-		MI_Instance* AppInitErrors;
-		auto AppInitResult = MI_Application_Initialize(0, L"CIMitar", &AppInitErrors, &TheCimApplication); //TODO: need to do more error-checking
-		NextIndex = 0;
+		auto AppInitResult = MI_Application_Initialize(0, L"CIMitar", NULL, &TheCimApplication); //TODO: need to do more error-checking
 	}
-	else
-	{
-		++NextIndex;
-	}
-	Sessions.emplace(NextIndex, this);
+	this->ComputerName = ComputerName;
+	Sessions.emplace_back(this);
 }
 
 Session::~Session()
 {
-	auto loc = Sessions.find(SessionID);
-	if (loc != Sessions.end())
-	{
-		Sessions.erase(loc);
-	}
-
+	lock_guard<std::mutex> SessionListAccessGuard(SessionListMutex);
+	Sessions.remove(this);
 	if (Sessions.empty() && TheCimApplication.ft != nullptr)
 	{
 		OutputDebugString(L"Application deleted");

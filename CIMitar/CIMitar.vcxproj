@@ -163,6 +163,7 @@
     <ClInclude Include="value.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="appinit.cpp" />
     <ClCompile Include="cimtype.cpp" />
     <ClCompile Include="error.cpp" />
     <ClCompile Include="operator.cpp" />

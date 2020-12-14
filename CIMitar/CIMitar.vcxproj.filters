@@ -89,6 +89,9 @@
     <ClCompile Include="option.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="appinit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Architecture.txt" />
