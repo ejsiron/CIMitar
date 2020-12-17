@@ -23,26 +23,23 @@ static std::unique_ptr<wchar_t[]> CopyPassword(const wchar_t* Source) noexcept
 	return Destination;
 }
 
-constexpr UsernamePasswordCreds::UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept
-{
-	domain = Credentials->domain;
-	username = Credentials->username;
-	password = CopyPassword(static_cast<const wchar_t*>(Credentials->password));
-}
+UsernamePasswordCreds::UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept :
+	domain(Credentials->domain),
+	username(Credentials->username),
+	password(CopyPassword(static_cast<const wchar_t*>(Credentials->password)))
+{}
 
-constexpr UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept
-{
-	domain.clear();
-	username = Username;
-	password = CopyPassword(Password);
-}
+UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept :
+	domain(std::wstring{}),
+	username(Username),
+	password(CopyPassword(Password))
+{}
 
-constexpr UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept
-{
-	domain = Domain;
-	username = Username;
-	password = CopyPassword(Password);
-}
+constexpr UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept :
+	domain(Domain),
+	username(Username),
+	password(CopyPassword(Password))
+{}
 
 constexpr UsernamePasswordCreds::UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept
 {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
 #include "CIMitar.h"
 #include <array>
 
@@ -44,9 +43,9 @@ namespace CIMitar
 		return FindMessage(CimErrorCode);
 	}
 
-	const wchar_t* Error::FindMessage(const int Code) noexcept
+	const wchar_t* Error::FindMessage(const unsigned int Code) noexcept
 	{
-		if (Code < 0 || Code >= ErrorMessages.size())
+		if (Code >= ErrorMessages.size())
 		{
 			return ErrorMessages[Code];
 		}

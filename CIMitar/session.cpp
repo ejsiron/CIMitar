@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "CIMitar.h"
 #include <algorithm>
 #include <list>
@@ -17,6 +16,7 @@ using namespace CIMitar;
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
 static list<Session*> Sessions{};
 static mutex SessionListMutex{};
+static std::set<std::wstring> LocalIPs{};
 #pragma endregion Housekeeping
 
 static MI_Session* NewCimSession(const wchar_t* ComputerName, SessionProtocols Protocol)

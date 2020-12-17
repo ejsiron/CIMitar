@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "instance.h"
 
 using namespace CIMitar;

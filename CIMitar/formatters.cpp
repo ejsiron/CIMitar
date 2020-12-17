@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "guidformatters.h"
 #include "stringformatters.h"
 #include <iomanip>

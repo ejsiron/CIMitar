@@ -1,5 +1,5 @@
 #pragma once
-#include "cimerrors.h"
+#include "CIMitar.h"
 #include "oplist.h"
 
 namespace CIMitar

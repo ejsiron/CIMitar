@@ -12,6 +12,7 @@
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <variant>
 #include <vector>
@@ -33,7 +34,7 @@ namespace CIMitar
 	private:
 		const std::wstring moreinformation{};
 	public:
-		constexpr cimitar_exception(const unsigned int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
+		cimitar_exception(const unsigned int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
 		cimitar_exception(const unsigned int ErrorCode, const int OpCode, const std::wstring& MoreInformation)
 			:CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode), moreinformation(MoreInformation)
 		{}
@@ -89,16 +90,16 @@ namespace CIMitar
 	class UsernamePasswordCreds
 	{
 	private:
-		std::wstring domain{};
-		std::wstring username{};
-		std::unique_ptr<wchar_t[]> password{ nullptr };	// memory securely wiped at destruction, but not protected in-memory
+		std::wstring domain;
+		std::wstring username;
+		std::unique_ptr<wchar_t[]> password;	// memory securely wiped at destruction, but not protected in-memory
 	public:
-		constexpr UsernamePasswordCreds() noexcept {}
-		constexpr UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
-		constexpr UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
-		constexpr UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
-		constexpr UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept;
-		constexpr UsernamePasswordCreds& operator=(const UsernamePasswordCreds& copysource) noexcept;
+		//UsernamePasswordCreds() noexcept {}
+		UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
+		UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
+		UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept;
+		UsernamePasswordCreds& operator=(const UsernamePasswordCreds& copysource) noexcept;
 		friend const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 		~UsernamePasswordCreds();
 		volatile const MI_UsernamePasswordCreds operator()() const noexcept;
@@ -129,9 +130,9 @@ namespace CIMitar
 		AuthenticationTypes authenticationtype{ AuthenticationTypes::DEFAULT };
 		std::variant<UsernamePasswordCreds, std::wstring> credentials;
 	public:
-		constexpr UserCredentials() noexcept = default;
-		constexpr UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(std::move(UsernamePasswordCreds(Credentials))) {}
-		constexpr UserCredentials(const std::wstring& CertificateThumbprint) noexcept : credentials(CertificateThumbprint) {}
+		// UserCredentials() noexcept = default;
+		UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(std::move(UsernamePasswordCreds(Credentials))) {}
+		UserCredentials(const std::wstring& CertificateThumbprint) noexcept : credentials(CertificateThumbprint) {}
 		// add UsernamePasswordCreds constructor
 		// add member access
 	};
@@ -141,13 +142,13 @@ namespace CIMitar
 	class Error
 	{
 	private:
-		int CimErrorCode = 0;
+		unsigned int CimErrorCode = 0;
 		// todo: add Operation tracking
 	public:
-		const int Code() const noexcept { return CimErrorCode; }
-		void Code(const int Code) noexcept { CimErrorCode = Code; }
+		const unsigned int Code() const noexcept { return CimErrorCode; }
+		void Code(const unsigned int Code) noexcept { CimErrorCode = Code; }
 		const wchar_t* Message() const noexcept;
-		static const wchar_t* FindMessage(const int Code) noexcept;
+		static const wchar_t* FindMessage(const unsigned int Code) noexcept;
 	};
 
 	using ErrorStack = std::vector<Error>;
@@ -158,7 +159,7 @@ namespace CIMitar
 		Error LastError{};
 	protected:
 		ErrorStack Errors{};
-		inline void SetError(const int Code) { LastError.Code(Code); }
+		inline void SetError(const unsigned int Code) { LastError.Code(Code); }
 	public:
 		const Error& GetLastError() { return LastError; }
 		virtual ~CimBase() = default;
@@ -196,11 +197,11 @@ namespace CIMitar
 		std::map <std::wstring, Option<std::wstring>> CustomStringOptions{};
 		std::map <std::wstring, Option<unsigned int>> CustomNumberOptions{};
 	protected:
-		constexpr WithOptions() = default;
+		WithOptions() = default;
 	public:
-		constexpr WithOptions(const WithOptions&) = default;
+		WithOptions(const WithOptions&) = default;
 		WithOptions& operator=(const WithOptions&) = default;
-		constexpr WithOptions(WithOptions&&) = default;
+		WithOptions(WithOptions&&) = default;
 		WithOptions& operator=(WithOptions&&) = default;
 		void AddCustom(std::wstring Name, std::wstring Value);
 		void AddCustom(std::wstring Name, unsigned int Value);
@@ -259,7 +260,7 @@ namespace CIMitar
 		virtual ~Session();
 		SessionOptions Options{};
 		const bool Connect();
-		void Disconnect();
+		const bool Close();
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
@@ -299,12 +300,12 @@ namespace CIMitar
 		std::wstring cimnamespace;
 		bool keysonly{ false };
 	protected:
-		constexpr wchar_t[] QueryLanguage = L"WQL";
+		//const wchar_t QueryLanguage[]{ L"WQL" };//can't do this, should be in implementation file anyway
 		Session& session;
-		void CIMOperatorBase(Session& OperatingSession, std::wstring& Namespace);
-		virtual void ReportError() void;
-		virtual void ReportResult(ReturnType retval) void;
-		virtual void ReportCompletion() void;
+		CIMOperatorBase(Session& OperatingSession, std::wstring& Namespace);
+		virtual void ReportError() = 0;
+		virtual void ReportResult(ReturnType retval) = 0;
+		virtual void ReportCompletion() = 0;
 	public:
 		OperatorOptions Options{};
 		const bool IsRunning();
@@ -611,7 +612,7 @@ namespace CIMitar
 	class CIMTimestamp : public CIMValue
 	{
 	public:
-		MI_Timestamp Value;
+		MI_Timestamp Value{0};
 		CIMTimestamp() noexcept : CIMValue(CIMType::Timestamp) {}
 		CIMTimestamp(MI_Datetime Val) noexcept : CIMValue(CIMType::Timestamp), Value(std::move(Val.u.timestamp)) {}
 		CIMTimestamp(MI_Timestamp Val) noexcept : CIMValue(CIMType::Timestamp), Value(std::move(Val)) {}
