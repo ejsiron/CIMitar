@@ -8,10 +8,10 @@ namespace CIMitar
 	class Element
 	{
 	private:
-		std::wstring Name;
+		std::wstring Name{};
 		MI_Value Value;
-		MI_Type Type;
-		MI_Uint32 MemoryFlag;
+		MI_Type Type{ MI_Type::MI_BOOLEAN };
+		MI_Uint32 MemoryFlag{ 0 };
 	public:
 		Element(const MI_Char* Name, MI_Value* Value, MI_Type Type, MI_Uint32 MemoryFlag);
 		Element(std::wstring& Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag);

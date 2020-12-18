@@ -4,8 +4,6 @@
 #error CIMitar is a C++ wrapper and only works with C++.
 #endif
 
-#pragma comment(lib,"mi.lib")
-
 #include <Windows.h>
 #include <ctime>
 #include <locale>
@@ -16,6 +14,8 @@
 #include <string>
 #include <variant>
 #include <vector>
+
+#pragma comment(lib,"mi.lib")
 
 #ifndef MI_USE_WCHAR
 #error CIMitar only functions with wide characters
@@ -57,8 +57,8 @@ namespace CIMitar
 		unsigned int Microseconds{ 0 };
 		constexpr Interval() noexcept = default;
 		constexpr Interval(MI_Interval* MIInterval) noexcept;
-		const MI_Interval& ToMIInterval() const noexcept;
-		const MI_Timestamp& ToMITimestamp() const noexcept;
+		const MI_Interval ToMIInterval() const noexcept;
+		const MI_Timestamp ToMITimestamp() const noexcept;
 	};
 
 	const bool operator==(const MI_Interval& lhs, const MI_Interval& rhs) noexcept;
@@ -77,8 +77,8 @@ namespace CIMitar
 		int UTCOffset{ 0 };
 		constexpr Timestamp() noexcept = default;
 		constexpr Timestamp(MI_Timestamp* MITimestamp) noexcept;
-		const MI_Timestamp& ToMITimestamp() const noexcept;
-		const MI_Interval& ToMIInterval() const noexcept;
+		const MI_Timestamp ToMITimestamp() const noexcept;
+		const MI_Interval ToMIInterval() const noexcept;
 	};
 
 	const bool operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept;

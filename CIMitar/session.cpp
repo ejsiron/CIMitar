@@ -57,6 +57,7 @@ const bool Session::Close()
 		CIMSession = nullptr;
 		OutputDebugString(L"I had to do it\r\n");
 	}
+	return true;
 }
 
 #pragma region Operators

@@ -12,9 +12,10 @@ namespace CIMitar::Formatters
 	{
 		size_t size = _snwprintf(nullptr, 0, Format.c_str(), args ...) + sizeof(wchar_t); // +1 is for L'\0'
 		std::unique_ptr<wchar_t[]> buf(new wchar_t[size]);
+#pragma warning(push)
 #pragma warning(suppress:4996)
 		_snwprintf(buf.get(), size, Format.c_str(), args ...);
-#pragma warning(enable:4996)
+#pragma warning(pop)
 		return std::wstring(buf.get(), buf.get() + size - sizeof(wchar_t));	// trim off the L'\0'
 	}
 

@@ -1,5 +1,5 @@
-#include <timezoneapi.h>
 #include "CIMitar.h"
+#include <timezoneapi.h>
 
 using namespace CIMitar;
 
@@ -12,12 +12,12 @@ constexpr Interval::Interval(MI_Interval* MIInterval) noexcept
 	Microseconds = MIInterval->microseconds;
 }
 
-const MI_Interval& Interval::ToMIInterval() const noexcept
+const MI_Interval Interval::ToMIInterval() const noexcept
 {
-	return MI_Interval{ Days, Hours, Minutes, Seconds, Microseconds };
+	return MI_Interval { Days, Hours, Minutes, Seconds, Microseconds };
 }
 
-const MI_Timestamp& Interval::ToMITimestamp() const noexcept
+const MI_Timestamp Interval::ToMITimestamp() const noexcept
 {
 	return MI_Timestamp{ 0, 0, Days, Hours, Minutes, Seconds, Microseconds, 0 };
 }
@@ -51,14 +51,14 @@ constexpr Timestamp::Timestamp(MI_Timestamp* Timestamp) noexcept
 	UTCOffset = Timestamp->utc;
 }
 
-const MI_Timestamp& Timestamp::ToMITimestamp() const noexcept
+const MI_Timestamp Timestamp::ToMITimestamp() const noexcept
 {
 	return MI_Timestamp{ Year, Month, Day, Hour, Minute, Second, Microseconds, UTCOffset };
 }
 
-const MI_Interval& Timestamp::ToMIInterval() const noexcept
+const MI_Interval Timestamp::ToMIInterval() const noexcept
 {
-	return MI_Interval{ Day, Hour, Minute, Second, Microseconds };
+	return MI_Interval{ Day, Hour, Minute, Second, Microseconds, 0, 0, 0 };
 }
 
 const bool CIMitar::operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept
@@ -90,7 +90,7 @@ Philosophy: working through FILETIME structures means the computer does the work
 // ensures that a TM structure will not cause crashes in related functions
 constexpr void CleanTM(tm& TM) noexcept
 {
-#pragma(push)
+#pragma warning(push)
 #pragma warning(disable : 4804)
 	0 <= TM.tm_mon <= 11 ? 0 : TM.tm_mon = 0;
 	1 <= TM.tm_mday <= 31 ? 0 : TM.tm_mday = 1;

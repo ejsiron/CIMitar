@@ -12,6 +12,7 @@ static volatile void* ObliterateString(std::unique_ptr<wchar_t[]>& DoomedString)
 		auto StringLength = wcslen(DoomedString.get()) + 1;
 		SecureZeroMemory(DoomedString.get(), StringLength * 2);
 	}
+	return &DoomedString;
 }
 
 static std::unique_ptr<wchar_t[]> CopyPassword(const wchar_t* Source) noexcept
@@ -35,18 +36,18 @@ UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Username, const 
 	password(CopyPassword(Password))
 {}
 
-constexpr UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept :
+UsernamePasswordCreds::UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept :
 	domain(Domain),
 	username(Username),
 	password(CopyPassword(Password))
 {}
 
-constexpr UsernamePasswordCreds::UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept
+UsernamePasswordCreds::UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept
 {
 	*this = copysource;
 }
 
-constexpr UsernamePasswordCreds& UsernamePasswordCreds::operator=(const UsernamePasswordCreds& copysource) noexcept
+UsernamePasswordCreds& UsernamePasswordCreds::operator=(const UsernamePasswordCreds& copysource) noexcept
 {
 	this->domain = copysource.domain;
 	this->username = copysource.username;

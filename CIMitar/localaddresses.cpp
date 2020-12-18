@@ -1,26 +1,25 @@
 #include <winsock2.h>
-#include <Windows.h>
+#include <windows.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #include <map>
 #include <mutex>
 #include <thread>
-#include "localaddresses.h"	// if Windows is included before winsock2, bad things happen
+#include "localaddresses.h"
 
 #pragma comment(lib, "iphlpapi.lib") // *UnicastIpAddress* and *Mib* functions
 #pragma comment (lib, "Ws2_32.lib")	// INetNtop function
 
-using namespace std;
 using namespace CIMitar::Infrastructure;
 
 size_t LocalAddresses::refcount{ 0 };
-set<wstring> LocalAddresses::Addresses{};
+std::set<std::wstring> LocalAddresses::Addresses{};
 
 static constexpr size_t MaxAddressTextLength{ 46 };	// to hold IPv4 or IPv6
 static std::mutex AddressesMutex{};
 static HANDLE ChangeListenerHandle{ 0 };
 
-void ModifyAddressTable(const PMIB_UNICASTIPADDRESS_TABLE pAddressTable, set<wstring>* Addresses, const bool Delete = false) noexcept
+void ModifyAddressTable(const PMIB_UNICASTIPADDRESS_TABLE pAddressTable, std::set<std::wstring>* Addresses, const bool Delete = false) noexcept
 {
 	wchar_t szAddress[MaxAddressTextLength]{ 0 };
 	std::lock_guard AddressesGuard(AddressesMutex);
@@ -41,7 +40,7 @@ void ModifyAddressTable(const PMIB_UNICASTIPADDRESS_TABLE pAddressTable, set<wst
 	}
 }
 
-void GetAllLocalAddresses(set<wstring>* Addresses)
+void GetAllLocalAddresses(std::set<std::wstring>* Addresses)
 {
 	PMIB_UNICASTIPADDRESS_TABLE pAddressTable{ nullptr };
 	auto Result = GetUnicastIpAddressTable(AF_UNSPEC, &pAddressTable);
@@ -63,7 +62,7 @@ VOID WINAPI IPAddressChanged(PVOID CallerContext, PMIB_UNICASTIPADDRESS_ROW pCha
 		[[fallthrough]];
 	case MIB_NOTIFICATION_TYPE::MibAddInstance:
 		EntryTable = { 1, *pChangedIPRow };
-		ModifyAddressTable(&EntryTable, static_cast<set<wstring>*>(CallerContext), DeleteFlag);
+		ModifyAddressTable(&EntryTable, static_cast<std::set<std::wstring>*>(CallerContext), DeleteFlag);
 		break;
 	default:
 		break;
@@ -109,8 +108,8 @@ LocalAddresses::~LocalAddresses()
 	}
 }
 
-const set<wstring> LocalAddresses::operator()() const noexcept
+const std::set<std::wstring> LocalAddresses::operator()() const noexcept
 {
-	lock_guard AddressesGuard(AddressesMutex);
+	std::lock_guard AddressesGuard(AddressesMutex);
 	return Addresses;	// return a copy so that caller locking is unnecessary and casting away constness doesn't hurt anything
 }
