@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="appinit.h" />
     <ClInclude Include="CIMitar.h" />
     <ClInclude Include="element.h" />
     <ClInclude Include="errorhandler.h" />
