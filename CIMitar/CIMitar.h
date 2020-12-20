@@ -1,11 +1,13 @@
 #pragma once
-
+#ifndef CIMITAR_CIMITAR_H_INCLUDED
+#define CIMITAR_CIMITAR_H_INCLUDED
 #ifndef __cplusplus
 #error CIMitar is a C++ wrapper and only works with C++.
 #endif
 
 #include <Windows.h>
 #include <ctime>
+#include <list>
 #include <locale>
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
 #include <map>
@@ -26,7 +28,8 @@ namespace CIMitar
 	enum CallbackModes
 	{
 		Report,
-		Inquire
+		Inquire,
+		Ignore
 	};
 
 	class cimitar_exception
@@ -259,7 +262,7 @@ namespace CIMitar
 		Session(const std::wstring& ComputerName = std::wstring());
 		virtual ~Session();
 		SessionOptions Options{};
-		const bool Connect();
+		const bool Connect() { return true; }
 		const bool Close();
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
@@ -612,7 +615,7 @@ namespace CIMitar
 	class CIMTimestamp : public CIMValue
 	{
 	public:
-		MI_Timestamp Value{0};
+		MI_Timestamp Value{ 0 };
 		CIMTimestamp() noexcept : CIMValue(CIMType::Timestamp) {}
 		CIMTimestamp(MI_Datetime Val) noexcept : CIMValue(CIMType::Timestamp), Value(std::move(Val.u.timestamp)) {}
 		CIMTimestamp(MI_Timestamp Val) noexcept : CIMValue(CIMType::Timestamp), Value(std::move(Val)) {}
@@ -731,4 +734,112 @@ namespace CIMitar
 		operator std::vector<unsigned long long>() const noexcept { return Value; }
 	};
 #pragma endregion Initial type work
+#pragma region Objects
+	enum class QualifierFlavors :int
+	{
+		None = 0,
+		EnableOverride = MI_FLAG_ENABLEOVERRIDE,
+		DisableOverride = MI_FLAG_DISABLEOVERRIDE,
+		Restricted = MI_FLAG_RESTRICTED,
+		ToSubClass = MI_FLAG_TOSUBCLASS,
+		Translatable = MI_FLAG_TRANSLATABLE
+	};
+
+	class QualifierDeclaration
+	{
+		std::wstring Name{};
+		unsigned int type;
+		QualifierFlavors flavor{ QualifierFlavors::None };
+		void* value;
+	};
+
+	class ClassDeclaration;	// forward declaration for schema
+
+	class SchemaDecl
+	{
+	public:
+		std::list<QualifierDeclaration> Qualifiers;
+		std::list<ClassDeclaration> Classes;
+	};
+	class FeatureDeclaration
+	{
+	public:
+		std::wstring Name{};
+		unsigned int flags{ 0 };
+		unsigned int hash{ 0 };
+		std::list<QualifierDeclaration> Qualifiers{};
+	};
+
+	class ParameterDeclaration : FeatureDeclaration
+	{
+	public:
+		unsigned int type;
+		std::wstring ClassName{};
+		unsigned int subscript;
+		unsigned int offset;
+	};
+
+	class PropertyDeclaration : ParameterDeclaration
+	{
+	public:
+		std::wstring OriginAncestor{};
+		std::wstring PropagatorAncestor{};
+		void* value;
+	};
+
+	class MIObjectBase : FeatureDeclaration
+	{
+		std::list<PropertyDeclaration> Properties;
+		// unsigned int size; // this is part of the definition of MI_Object_Decl but probably not needed
+	};
+
+	class MethodDeclaration :MIObjectBase
+	{
+		unsigned int ReturnType;
+		SchemaDecl& OwningSchema;
+		// address to invocation function
+	};
+
+	enum ClassDeclarationFlags :int
+	{
+		ClassFlag = MI_FLAG_CLASS,
+		AssociationFlag = MI_FLAG_ASSOCIATION,
+		IndicationFlag = MI_FLAG_ASSOCIATION,
+		AbstractFlag = MI_FLAG_ABSTRACT,
+		TerminalFlag = MI_FLAG_TERMINAL
+	};
+
+	class Class;	// forward declaration for ClassDeclaration
+
+	class ClassDeclaration : MIObjectBase
+	{	
+	private:
+		SchemaDecl& OwningSchema;
+		std::variant<int, Class*> ClassData;	//int:0 if static ClassDecl, -1 if dynamic instance, Class* if owned by a class
+	public:
+		std::wstring SuperClass{};
+		ClassDeclaration* SuperClassDeclaration{nullptr};
+		std::list<MethodDeclaration> Methods;
+	};
+
+	class Class
+	{
+		ClassDeclaration& Declaration;
+		std::wstring Namespace{};
+		std::wstring ServerName{};
+	};
+
+	class Instance
+	{
+	};
+#pragma endregion Objects
+
+#pragma region Functions
+	Class NewClass(ClassDeclaration& Declaration, std::wstring Namespace = std::wstring{});
+	Class NewClass(std::wstring& ServerName, ClassDeclaration& Declaration, std::wstring Namespace = std::wstring{});
+	Instance NewInstance(std::wstring& ClassName);
+	Instance NewInstance(std::wstring& ClassName, ClassDeclaration& Declaration);
+#pragma endregion Functions
 }
+
+#endif // CIMITAR_CIMITAR_H_INCLUDED

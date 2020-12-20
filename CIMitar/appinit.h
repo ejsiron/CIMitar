@@ -7,6 +7,6 @@
 
 namespace CIMitar
 {
-	std::pair<MI_Result, MI_Application> InitializeCIMitar()
+	std::pair<MI_Result, MI_Application> InitializeCIMitar();
 }
 #endif CIMITAR_APPINIT_H_INCLUDED

@@ -1,7 +1,9 @@
 #include "CIMitar.h"
+#include "appinit.h"
 #include <algorithm>
 #include <list>
 #include <mutex>
+#include <shared_mutex>
 
 using namespace std;
 using namespace CIMitar;
@@ -16,7 +18,7 @@ using namespace CIMitar;
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
 static list<Session*> Sessions{};
 static mutex SessionListMutex{};
-static std::set<std::wstring> LocalIPs{};
+static shared_mutex ApplicationMutex{};
 #pragma endregion Housekeeping
 
 static MI_Session* NewCimSession(const wchar_t* ComputerName, SessionProtocols Protocol)
@@ -26,10 +28,14 @@ static MI_Session* NewCimSession(const wchar_t* ComputerName, SessionProtocols P
 
 Session::Session(const wstring& ComputerName)
 {
-	lock_guard<std::mutex> SessionListAccessGuard(SessionListMutex);
+	lock_guard ApplicationAccessGuard(ApplicationMutex);
 	if (Sessions.empty())
 	{
-		auto AppInitResult = MI_Application_Initialize(0, L"CIMitar", NULL, &TheCimApplication); //TODO: need to do more error-checking
+		auto AppInitResult{ InitializeCIMitar() };
+		if (AppInitResult.first == MI_Result::MI_RESULT_OK)
+			TheCimApplication = AppInitResult.second;
+		else
+			TheCimApplication = MI_APPLICATION_NULL;	// this is not enough
 	}
 	this->ComputerName = ComputerName;
 	Sessions.emplace_back(this);
@@ -37,11 +43,10 @@ Session::Session(const wstring& ComputerName)
 
 Session::~Session()
 {
-	lock_guard<std::mutex> SessionListAccessGuard(SessionListMutex);
+	lock_guard ApplicationAccessGuard(ApplicationMutex);
 	Sessions.remove(this);
 	if (Sessions.empty() && TheCimApplication.ft != nullptr)
 	{
-		OutputDebugString(L"Application deleted");
 		MI_Application_Close(&TheCimApplication);
 		TheCimApplication = MI_APPLICATION_NULL;
 	}
@@ -49,14 +54,8 @@ Session::~Session()
 
 const bool Session::Close()
 {
+	// TODO: error checking
 	MI_Session_Close(CIMSession, NULL, NULL);
-	if (CIMSession == nullptr)
-		OutputDebugString(L"Close did it\r\n");
-	else
-	{
-		CIMSession = nullptr;
-		OutputDebugString(L"I had to do it\r\n");
-	}
 	return true;
 }
 
