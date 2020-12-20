@@ -25,6 +25,7 @@
 
 namespace CIMitar
 {
+	constexpr wchar_t DefaultCIMNamespace[] = { L"root/CIMv2" };
 	enum CallbackModes
 	{
 		Report,
@@ -48,8 +49,7 @@ namespace CIMitar
 		const wchar_t* what() const noexcept { return Message(); }
 		const std::wstring& MoreInformation() const noexcept { return moreinformation; }
 	};
-
-#pragma region MI type encapsulation
+	
 	class Interval
 	{
 	public:
@@ -140,8 +140,6 @@ namespace CIMitar
 		// add member access
 	};
 
-#pragma endregion
-
 	class Error
 	{
 	private:
@@ -168,7 +166,6 @@ namespace CIMitar
 		virtual ~CimBase() = default;
 	};
 
-#pragma region Session
 	enum class SessionProtocols { DCOM, WSMAN };
 	enum class SessionPrefixOverrides { NONE, HTTP, HTTPS };
 	enum class SessionPacketEncodingOptions { DEFAULT, UTF8, UTF16 };
@@ -270,9 +267,7 @@ namespace CIMitar
 
 	const bool ConnectSession(Session& Session);
 	const bool ConnectionSessionAsync(Session& Session);
-#pragma endregion Session
 
-#pragma region Operator
 	enum class OperatorMessageChannels
 	{
 		Warning,
@@ -314,9 +309,6 @@ namespace CIMitar
 		const bool IsRunning();
 		void Cancel();
 	};
-#pragma endregion Operator
-
-#pragma region Initial type work
 
 	enum class CIMType
 	{
@@ -733,8 +725,7 @@ namespace CIMitar
 		CIMUInt64A& operator=(CIMUInt64A&&) = default;
 		operator std::vector<unsigned long long>() const noexcept { return Value; }
 	};
-#pragma endregion Initial type work
-#pragma region Objects
+
 	enum class QualifierFlavors :int
 	{
 		None = 0,
@@ -812,13 +803,13 @@ namespace CIMitar
 	class Class;	// forward declaration for ClassDeclaration
 
 	class ClassDeclaration : MIObjectBase
-	{	
+	{
 	private:
 		SchemaDecl& OwningSchema;
 		std::variant<int, Class*> ClassData;	//int:0 if static ClassDecl, -1 if dynamic instance, Class* if owned by a class
 	public:
 		std::wstring SuperClass{};
-		ClassDeclaration* SuperClassDeclaration{nullptr};
+		ClassDeclaration* SuperClassDeclaration{ nullptr };
 		std::list<MethodDeclaration> Methods;
 	};
 
@@ -831,15 +822,41 @@ namespace CIMitar
 
 	class Instance
 	{
-	};
-#pragma endregion Objects
 
-#pragma region Functions
-	Class NewClass(ClassDeclaration& Declaration, std::wstring Namespace = std::wstring{});
+	};
+
+	void SetDefaultNamespace(const std::wstring& Namespace);
+	const std::wstring& GetDefaultNamespace();
+	inline void ResetNamespace();
+	void SetDefaultSession(Session& NewDefaultSession);
+	Class NewClass(ClassDeclaration& Declaration, const std::wstring& Namespace = std::wstring{});
 	Class NewClass(std::wstring& ServerName, ClassDeclaration& Declaration, std::wstring Namespace = std::wstring{});
 	Instance NewInstance(std::wstring& ClassName);
 	Instance NewInstance(std::wstring& ClassName, ClassDeclaration& Declaration);
-#pragma endregion Functions
+	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only class; add an overload that accepts properties
+	const bool RemoveInstance(Instance& Instance);
+	const bool RemoveInstance(const std::wstring& Query);
+	const bool RemoveInstance(Session& Session, const std::wstring& Query);
+	std::list<Class> ListClasses(const std::wstring& Namespace = GetDefaultNamespace());
+	std::list<Class> ListClasses(const Session& Session, const std::wstring& Namespace = GetDefaultNamespace());
+
+	// TODO: ListClasses with parameter pack
+	Class GetCimClass(const std::wstring& Name);
+	Class GetCimClass(const std::wstring& Namespace, const std::wstring& Name);
+	// TODO: GetClass with parameter pack
+	const bool InvokeMethod(Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	const bool InvokeMethod(Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	const bool InvokeMethod(Session& Session, Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	const bool InvokeMethod(Session& Session, Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	// TODO: invoke parameter packs
+	const bool SubscribeEvent(const std::wstring& Query);
+	const bool SubscribeEvent(const std::wstring& Namespace, const std::wstring& Query);
+	const bool SubscribeEvent(Session& Session, const std::wstring& Query);
+	const bool SubscribeEvent(Session& Session, const std::wstring& Namespace, const std::wstring& Query);
+	// TODO: subscribe parameter packs
+	const bool TestConnection();
+	const bool TestConnection(Session& Session);
+	// TODO: test with callbacks
 }
 
-#endif // CIMITAR_CIMITAR_H_INCLUDED
+#endif CIMITAR_CIMITAR_H_INCLUDED
