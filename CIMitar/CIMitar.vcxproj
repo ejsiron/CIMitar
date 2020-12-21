@@ -169,7 +169,7 @@
     <ClCompile Include="cimtype.cpp" />
     <ClCompile Include="error.cpp" />
     <ClCompile Include="localaddresses.cpp" />
-    <ClCompile Include="operator.cpp" />
+    <ClCompile Include="operation.cpp" />
     <ClCompile Include="option.cpp" />
     <ClCompile Include="time.cpp" />
     <ClCompile Include="session.cpp" />

@@ -4,6 +4,11 @@
 #ifndef __cplusplus
 #error CIMitar is a C++ wrapper and only works with C++.
 #endif
+#ifdef _MSC_VER
+#if _MSVC_LANG < 201703L
+#error CIMitar uses C++17 features and requires a capable compiler
+#endif
+#endif
 
 #include <Windows.h>
 #include <ctime>
@@ -49,7 +54,7 @@ namespace CIMitar
 		const wchar_t* what() const noexcept { return Message(); }
 		const std::wstring& MoreInformation() const noexcept { return moreinformation; }
 	};
-	
+
 	class Interval
 	{
 	public:
@@ -180,10 +185,13 @@ namespace CIMitar
 		T value{};
 		bool overrideflag{ false };
 	public:
-		constexpr Option()noexcept {}
-		constexpr Option(T Value) noexcept {}
-		constexpr Option(T& Value) noexcept {}
-		constexpr Option(std::wstring CustomName, T Value) :customname(CustomName), value(Value) {}
+		Option()noexcept {}
+		Option(T Value) noexcept {}
+		Option(T& Value) noexcept {}
+
+		// make this noexcept
+		Option(std::wstring CustomName, T Value) :customname(CustomName), value(Value) {}
+		virtual ~Option() = default;
 		void Reset() noexcept { overrideflag = false; }
 		T& get() noexcept { return value; }
 		void Set(T& Value) { Value = value; overrideflag = true; }
@@ -252,21 +260,20 @@ namespace CIMitar
 	class Session :WithOptions
 	{
 	private:
-		MI_Session* CIMSession = nullptr;
+		MI_Session CIMSession{ 0 };
 		std::wstring ComputerName;
+		const bool Connect(const SessionProtocols* Protocol);
 		// TODO: add accounting mechanism for operations
 	public:
-		Session(const std::wstring& ComputerName = std::wstring());
+		Session(const std::wstring& ComputerName = L"");
 		virtual ~Session();
 		SessionOptions Options{};
-		const bool Connect() { return true; }
+		const bool Connect();
+		const bool Connect(const SessionProtocols Protocol);
 		const bool Close();
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
-
-	const bool ConnectSession(Session& Session);
-	const bool ConnectionSessionAsync(Session& Session);
 
 	enum class OperatorMessageChannels
 	{
@@ -275,7 +282,34 @@ namespace CIMitar
 		Debug
 	};
 
-	class OperatorOptions
+	enum class OperationRTTIFlags :int
+	{
+		Default = MI_OPERATIONFLAGS_DEFAULT_RTTI,
+		None = MI_OPERATIONFLAGS_NO_RTTI,
+		Basic = MI_OPERATIONFLAGS_BASIC_RTTI,
+		Standard = MI_OPERATIONFLAGS_STANDARD_RTTI,
+		Full = MI_OPERATIONFLAGS_FULL_RTTI
+	};
+
+	enum class OperationPolymorphismFlags :int
+	{
+		Deep = 0,	// default
+		Shallow = MI_OPERATIONFLAGS_POLYMORPHISM_SHALLOW,
+		DeepBasePropertiesOnly = MI_OPERATIONFLAGS_POLYMORPHISM_DEEP_BASE_PROPS_ONLY
+	};
+
+	class OperationFlags
+	{
+	public:
+		bool ManualAckResults{ false };
+		bool LocalizedQualifiers{ false };
+		bool UseExpensiveProperties{ false };
+		bool ReportOperationStarted{ false };
+		OperationRTTIFlags RTTI{ OperationRTTIFlags::Default };
+		OperationPolymorphismFlags Polymorphism{ OperationPolymorphismFlags::Deep };
+	};
+
+	class OperationOptions
 	{
 	public:
 		Option<bool> WarningMessageChannel{ true };
@@ -298,14 +332,13 @@ namespace CIMitar
 		std::wstring cimnamespace;
 		bool keysonly{ false };
 	protected:
-		//const wchar_t QueryLanguage[]{ L"WQL" };//can't do this, should be in implementation file anyway
 		Session& session;
 		CIMOperatorBase(Session& OperatingSession, std::wstring& Namespace);
 		virtual void ReportError() = 0;
 		virtual void ReportResult(ReturnType retval) = 0;
 		virtual void ReportCompletion() = 0;
 	public:
-		OperatorOptions Options{};
+		OperationOptions Options{};
 		const bool IsRunning();
 		void Cancel();
 	};
@@ -793,37 +826,32 @@ namespace CIMitar
 
 	enum ClassDeclarationFlags :int
 	{
-		ClassFlag = MI_FLAG_CLASS,
-		AssociationFlag = MI_FLAG_ASSOCIATION,
-		IndicationFlag = MI_FLAG_ASSOCIATION,
-		AbstractFlag = MI_FLAG_ABSTRACT,
-		TerminalFlag = MI_FLAG_TERMINAL
-	};
-
-	class Class;	// forward declaration for ClassDeclaration
-
-	class ClassDeclaration : MIObjectBase
-	{
-	private:
-		SchemaDecl& OwningSchema;
-		std::variant<int, Class*> ClassData;	//int:0 if static ClassDecl, -1 if dynamic instance, Class* if owned by a class
-	public:
-		std::wstring SuperClass{};
-		ClassDeclaration* SuperClassDeclaration{ nullptr };
-		std::list<MethodDeclaration> Methods;
+		DefaultClass = MI_FLAG_CLASS,
+		AssociationClass = MI_FLAG_ASSOCIATION,
+		IndicationClass = MI_FLAG_ASSOCIATION,
+		AbstractClass = MI_FLAG_ABSTRACT,
+		TerminalClass = MI_FLAG_TERMINAL
 	};
 
 	class Class
 	{
-		ClassDeclaration& Declaration;
+	private:
+		MI_ClassDecl ClassDeclaration;
 		std::wstring Namespace{};
 		std::wstring ServerName{};
+	public:
 	};
 
 	class Instance
 	{
-
+	public:
+		std::wstring ServerName{};
+		std::wstring Namespace{};
+		std::list<PropertyDeclaration> Properties{};
 	};
+
+	//const bool ConnectSession(Session& Session);
+	//const bool ConnectionSessionAsync(Session& Session);
 
 	void SetDefaultNamespace(const std::wstring& Namespace);
 	const std::wstring& GetDefaultNamespace();
@@ -841,8 +869,8 @@ namespace CIMitar
 	std::list<Class> ListClasses(const Session& Session, const std::wstring& Namespace = GetDefaultNamespace());
 
 	// TODO: ListClasses with parameter pack
-	Class GetCimClass(const std::wstring& Name);
-	Class GetCimClass(const std::wstring& Namespace, const std::wstring& Name);
+	Class GetClass(const std::wstring& Name);
+	Class GetClass(const std::wstring& Namespace, const std::wstring& Name);
 	// TODO: GetClass with parameter pack
 	const bool InvokeMethod(Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
 	const bool InvokeMethod(Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);

@@ -32,9 +32,40 @@ namespace CIMitar::Formatters
 	// can throw:
 	// * length_error: if final string is too long
 
-	std::wstring JoinString(const std::wstring& Glue, const std::vector<std::wstring>& Parts);
-	template <class T>
-	std::wstring JoinString(const T Glue, const std::vector<std::wstring>& Parts) { return JoinString(std::wstring{ Glue }, Parts); }
+	constexpr size_t MinItemsForJoinOptimization{ 50 };	// arbitrary number to decide if JoinString pre-allocation calculations are worth it
+
+	template <typename Container>
+	std::wstring JoinString(const std::wstring& Glue, const Container& Parts)
+	{
+		std::wstring JoinedString{};
+		if (Parts.size())
+		{
+			if (Parts.size() >= MinItemsForJoinOptimization)
+			{
+				size_t FinalStringLength{ Glue.size() * (Parts.size() - 1) };
+				for (auto const& Part : Parts)
+				{
+					FinalStringLength += Part.size();
+				}
+				JoinedString.resize(FinalStringLength);
+			}
+			JoinedString = *Parts.cbegin();
+			if (JoinedString.size() > 1)
+			{
+				for (auto Part{ ++Parts.cbegin() }; Part != Parts.cend(); ++Part)
+				{
+					JoinedString += Glue + *Part;
+				}
+			}
+		}
+		return JoinedString;
+	}
+
+	template <typename T, typename Container>
+	std::wstring JoinString(const T& Glue, const Container& Parts)
+	{
+		return JoinString(std::wstring{ Glue }, Parts);
+	}
 
 	void GetGuidFromString(const wchar_t* TextGUID, GUID* Guid);
 	void GetGuidFromString(const std::wstring& TextGUID, GUID* Guid);
