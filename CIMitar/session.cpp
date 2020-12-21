@@ -1,6 +1,7 @@
 #include "CIMitar.h"
 #include "appinit.h"
 #include "localaddresses.h"
+#include "operation.h"
 #include "stringformatters.h"
 #include <algorithm>
 #include <list>
@@ -26,10 +27,10 @@ static mutex SessionListMutex{};
 static shared_mutex ApplicationMutex{};
 #pragma endregion Housekeeping
 
-Session* DefaultSession{ nullptr };
+std::unique_ptr<Session> DefaultSession{ nullptr };
 void CIMitar::SetDefaultSession(Session& NewDefaultSession)
 {
-	DefaultSession = &NewDefaultSession;
+	DefaultSession = make_unique<Session>(NewDefaultSession);
 }
 
 Session::Session(const wstring& ComputerName)
@@ -38,12 +39,12 @@ Session::Session(const wstring& ComputerName)
 	lock_guard ApplicationAccessGuard(ApplicationMutex);
 	if (Sessions.empty())
 	{
-		DefaultSession = this;
+		DefaultSession = make_unique<Session>(this);
 		auto AppInitResult{ InitializeCIMitar() };
 		if (AppInitResult.first == MI_Result::MI_RESULT_OK)
 			TheCimApplication = AppInitResult.second;
 		else
-			TheCimApplication = MI_APPLICATION_NULL;	// this is not enough
+			TheCimApplication = MI_APPLICATION_NULL;	// TODO: this is not enough
 	}
 	this->ComputerName = ComputerName;
 	Sessions.emplace_back(this);
@@ -53,9 +54,9 @@ Session::~Session()
 {
 	lock_guard ApplicationAccessGuard(ApplicationMutex);
 	Sessions.remove(this);
-	if (!Sessions.empty() && DefaultSession == this)
+	if (!Sessions.empty() && DefaultSession.get() == this)
 	{
-		DefaultSession = *Sessions.begin();
+		DefaultSession = make_unique<Session>(Sessions.begin());
 	}
 	if (Sessions.empty() && TheCimApplication.ft != nullptr)
 	{
@@ -74,7 +75,7 @@ const bool Session::Connect(const SessionProtocols* Protocol)
 	const wchar_t* TargetName{ ComputerName.empty() || IsLocal ? nullptr : ComputerName.c_str() };
 	MI_Result Result{ MI_Application_NewSession(&TheCimApplication, SelectedProtocol, TargetName, NULL, NULL, NULL, &CIMSession) };
 	// TODO: error checking and reporting
-	return Result	== MI_RESULT_OK;
+	return Result == MI_RESULT_OK;
 }
 
 const bool Session::Connect()
@@ -106,8 +107,11 @@ const bool CIMitar::operator!=(const Session& lhs, const Session& rhs) noexcept
 }
 #pragma endregion
 
-Class NewClass(ClassDeclaration& Declaration, const std::wstring& Namespace = std::wstring{})
+Class Session::GetClass(const std::wstring& Name) { return GetClass(GetDefaultNamespace(), Name); }
+Class Session::GetClass(const std::wstring& Namespace, const std::wstring& Name)
 {
-	//MI_Class newclass;
-	//MI_Result Result{MI_Application_NewClass(&TheCimApplication)}
+	ClassOpPack Op{};
+	MI_Session_GetClass(&CIMSession, 0, NULL, Namespace.c_str(), Name.c_str(), NULL, &Op.operation);
+	MI_Operation_GetClass(&Op.operation, &Op.pRetrievedClass, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
+	return Class (Op.pRetrievedClass);	// MI_Session_GetClass should only return one result, and if it doesn't, Op will kill further results when it goes out of scope
 }

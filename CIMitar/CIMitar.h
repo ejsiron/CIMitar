@@ -257,6 +257,8 @@ namespace CIMitar
 		void ClearProxyCredentials() noexcept;
 	};
 
+	class Class; //forward declaration for Session visibility
+
 	class Session :WithOptions
 	{
 	private:
@@ -271,6 +273,8 @@ namespace CIMitar
 		const bool Connect();
 		const bool Connect(const SessionProtocols Protocol);
 		const bool Close();
+		Class GetClass(const std::wstring& Name);
+		Class GetClass(const std::wstring& Classname, const std::wstring& Name);
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
@@ -777,13 +781,11 @@ namespace CIMitar
 		void* value;
 	};
 
-	class ClassDeclaration;	// forward declaration for schema
-
 	class SchemaDecl
 	{
 	public:
 		std::list<QualifierDeclaration> Qualifiers;
-		std::list<ClassDeclaration> Classes;
+		// Classes;
 	};
 	class FeatureDeclaration
 	{
@@ -811,19 +813,6 @@ namespace CIMitar
 		void* value;
 	};
 
-	class MIObjectBase : FeatureDeclaration
-	{
-		std::list<PropertyDeclaration> Properties;
-		// unsigned int size; // this is part of the definition of MI_Object_Decl but probably not needed
-	};
-
-	class MethodDeclaration :MIObjectBase
-	{
-		unsigned int ReturnType;
-		SchemaDecl& OwningSchema;
-		// address to invocation function
-	};
-
 	enum ClassDeclarationFlags :int
 	{
 		DefaultClass = MI_FLAG_CLASS,
@@ -831,15 +820,6 @@ namespace CIMitar
 		IndicationClass = MI_FLAG_ASSOCIATION,
 		AbstractClass = MI_FLAG_ABSTRACT,
 		TerminalClass = MI_FLAG_TERMINAL
-	};
-
-	class Class
-	{
-	private:
-		MI_ClassDecl ClassDeclaration;
-		std::wstring Namespace{};
-		std::wstring ServerName{};
-	public:
 	};
 
 	class Instance
@@ -850,6 +830,30 @@ namespace CIMitar
 		std::list<PropertyDeclaration> Properties{};
 	};
 
+	class Class
+	{
+	private:
+		Class(MI_Class* SourceClass);
+		Class(MI_ClassDecl* Declaration);
+		std::wstring name{};
+		std::wstring classnamespace{};
+		std::wstring servername{};
+		unsigned int hashcode{ 0 };
+		bool empty{ false };
+		friend class Session;
+	public:
+		virtual ~Class();
+		const std::wstring Name() const noexcept { return name; }
+		const std::wstring Namespace() const noexcept { return classnamespace; }
+		const std::wstring ServerName() const noexcept { return servername; }
+		Class& GetOwningClass();
+		const bool IsEmpty() const noexcept { return empty; }
+		// qualifiers
+		// properties
+		// methods
+		// schema
+	};
+
 	//const bool ConnectSession(Session& Session);
 	//const bool ConnectionSessionAsync(Session& Session);
 
@@ -857,10 +861,9 @@ namespace CIMitar
 	const std::wstring& GetDefaultNamespace();
 	inline void ResetNamespace();
 	void SetDefaultSession(Session& NewDefaultSession);
-	Class NewClass(ClassDeclaration& Declaration, const std::wstring& Namespace = std::wstring{});
-	Class NewClass(std::wstring& ServerName, ClassDeclaration& Declaration, std::wstring Namespace = std::wstring{});
+	Class NewClass(Class& SourceClass);
+	Class NewClass(Instance& SourceInstance);
 	Instance NewInstance(std::wstring& ClassName);
-	Instance NewInstance(std::wstring& ClassName, ClassDeclaration& Declaration);
 	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only class; add an overload that accepts properties
 	const bool RemoveInstance(Instance& Instance);
 	const bool RemoveInstance(const std::wstring& Query);
