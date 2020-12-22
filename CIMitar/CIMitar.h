@@ -265,9 +265,9 @@ namespace CIMitar
 		MI_Session CIMSession{ 0 };
 		std::wstring ComputerName;
 		const bool Connect(const SessionProtocols* Protocol);
+		Session();
 		// TODO: add accounting mechanism for operations
 	public:
-		Session(const std::wstring& ComputerName = L"");
 		virtual ~Session();
 		SessionOptions Options{};
 		const bool Connect();
@@ -275,6 +275,11 @@ namespace CIMitar
 		const bool Close();
 		Class GetClass(const std::wstring& Name);
 		Class GetClass(const std::wstring& Classname, const std::wstring& Name);
+
+		friend Session NewSession();
+		friend Session NewSession(const std::wstring ComputerName);
+		friend Session NewSession(const SessionOptions& Options);
+		friend Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
@@ -763,28 +768,28 @@ namespace CIMitar
 		operator std::vector<unsigned long long>() const noexcept { return Value; }
 	};
 
-	enum class QualifierFlavors :int
+	class Qualifier
 	{
-		None = 0,
-		EnableOverride = MI_FLAG_ENABLEOVERRIDE,
-		DisableOverride = MI_FLAG_DISABLEOVERRIDE,
-		Restricted = MI_FLAG_RESTRICTED,
-		ToSubClass = MI_FLAG_TOSUBCLASS,
-		Translatable = MI_FLAG_TRANSLATABLE
-	};
-
-	class QualifierDeclaration
-	{
-		std::wstring Name{};
-		unsigned int type;
-		QualifierFlavors flavor{ QualifierFlavors::None };
-		void* value;
+	private:
+		std::wstring name{};
+		unsigned int type{ 0 };
+		unsigned int flavor{ 0 };
+		void* value{ nullptr };
+		Qualifier(const MI_Qualifier* SourceQualifier);
+		friend class Class;
+	public:
+		const std::wstring Name() const noexcept { return name; }
+		const bool EnableOverrideSet() const noexcept { return flavor | MI_FLAG_ENABLEOVERRIDE; }
+		const bool DisableOverrideSet() const noexcept { return flavor | MI_FLAG_DISABLEOVERRIDE; }
+		const bool Restricted() const noexcept { return flavor | MI_FLAG_RESTRICTED; }
+		const bool Inheritable() const noexcept { return flavor | MI_FLAG_TOSUBCLASS; }
+		const bool Translatable() const noexcept { return flavor | MI_FLAG_TRANSLATABLE; }
 	};
 
 	class SchemaDecl
 	{
 	public:
-		std::list<QualifierDeclaration> Qualifiers;
+		std::list<Qualifier> Qualifiers;
 		// Classes;
 	};
 	class FeatureDeclaration
@@ -793,7 +798,7 @@ namespace CIMitar
 		std::wstring Name{};
 		unsigned int flags{ 0 };
 		unsigned int hash{ 0 };
-		std::list<QualifierDeclaration> Qualifiers{};
+		std::list<Qualifier> Qualifiers{};
 	};
 
 	class ParameterDeclaration : FeatureDeclaration
@@ -813,15 +818,6 @@ namespace CIMitar
 		void* value;
 	};
 
-	enum ClassDeclarationFlags :int
-	{
-		DefaultClass = MI_FLAG_CLASS,
-		AssociationClass = MI_FLAG_ASSOCIATION,
-		IndicationClass = MI_FLAG_ASSOCIATION,
-		AbstractClass = MI_FLAG_ABSTRACT,
-		TerminalClass = MI_FLAG_TERMINAL
-	};
-
 	class Instance
 	{
 	public:
@@ -833,33 +829,40 @@ namespace CIMitar
 	class Class
 	{
 	private:
-		Class(MI_Class* SourceClass);
+		Class(const MI_Class* SourceClass);
 		Class(MI_ClassDecl* Declaration);
 		std::wstring name{};
 		std::wstring classnamespace{};
 		std::wstring servername{};
+		unsigned int flags{ 0 };
 		unsigned int hashcode{ 0 };
 		bool empty{ false };
 		friend class Session;
 	public:
-		virtual ~Class();
+		virtual ~Class() = default;
 		const std::wstring Name() const noexcept { return name; }
 		const std::wstring Namespace() const noexcept { return classnamespace; }
 		const std::wstring ServerName() const noexcept { return servername; }
 		Class& GetOwningClass();
 		const bool IsEmpty() const noexcept { return empty; }
+		const bool IsAssociation() const noexcept { return flags | MI_FLAG_ASSOCIATION; }
+		const bool IsIndication() const noexcept { return flags | MI_FLAG_INDICATION; }
+		const bool IsAbstract() const noexcept { return flags | MI_FLAG_ABSTRACT; }
+		const bool IsTerminal() const noexcept { return flags | MI_FLAG_TERMINAL; }
 		// qualifiers
 		// properties
 		// methods
 		// schema
 	};
 
-	//const bool ConnectSession(Session& Session);
-	//const bool ConnectionSessionAsync(Session& Session);
-
+	Session NewSession();
+	Session NewSession(const std::wstring ComputerName);
+	Session NewSession(const SessionOptions& Options);
+	Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
+	
 	void SetDefaultNamespace(const std::wstring& Namespace);
 	const std::wstring& GetDefaultNamespace();
-	inline void ResetNamespace();
+	inline void ResetNamespace() { SetDefaultNamespace(DefaultCIMNamespace); }
 	void SetDefaultSession(Session& NewDefaultSession);
 	Class NewClass(Class& SourceClass);
 	Class NewClass(Instance& SourceInstance);

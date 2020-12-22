@@ -2,8 +2,10 @@
 
 using namespace CIMitar;
 
-Class::Class(MI_ClassDecl* Declaration)
+Class::Class(const MI_Class* SourceClass)
 {
-	name.assign(Declaration->name);
-	
+	name.assign(SourceClass->classDecl->name);
+	classnamespace.assign(SourceClass->namespaceName);
+	servername.assign(SourceClass->serverName);
+	hashcode = SourceClass->classDecl->code;
 }

@@ -6,9 +6,12 @@
 
 int main()
 {
-	CIMitar::Session sess{};
+	CIMitar::Session sess{ CIMitar::NewSession() };
 	//CIMitar::Session sess2{L"svhv2"};
 	std::wcout << sess.Connect() << std::endl;
+	auto x = sess.GetClass(L"Win32_Service");
+	std::wcout << L"Class name: " << x.Name() << std::endl;
+	std::wcout << L"Class server name: " << x.ServerName() << std::endl;
 	//std::wcout << sess2.Connect() << std::endl;
 	sess.Close();
 	//sess2.Close();
