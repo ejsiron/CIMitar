@@ -122,26 +122,26 @@ Class Session::GetClass(const std::wstring& Namespace, const std::wstring& Name)
 	return Class{ Op.pRetrievedClass };	// MI_Session_GetClass should only return one result, and if it doesn't, Op will kill further results when it goes out of scope
 }
 
-Session CIMitar::NewSession()
+Session&& CIMitar::NewSession()
 {
 	return NewSession(L"");
 }
 
-Session CIMitar::NewSession(const std::wstring ComputerName)
+Session&& CIMitar::NewSession(const std::wstring ComputerName)
 {
 	return NewSession(ComputerName, SessionOptions{});
 }
 
-Session CIMitar::NewSession(const SessionOptions& Options)
+Session&& CIMitar::NewSession(const SessionOptions& Options)
 {
 	return NewSession(L"", Options);
 }
 
-Session CIMitar::NewSession(const std::wstring ComputerName, const SessionOptions& Options)
+Session&& CIMitar::NewSession(const std::wstring ComputerName, const SessionOptions& Options)
 {
 	wcout << L"Entering a constructor lock point" << endl;
-	lock_guard ApplicationAccessGuard(ApplicationMutex);
 	Session newsession{};
+	ApplicationMutex.lock();
 	if (Sessions.empty())
 	{
 		DefaultSession = &newsession;
@@ -153,7 +153,7 @@ Session CIMitar::NewSession(const std::wstring ComputerName, const SessionOption
 	}
 	newsession.ComputerName = ComputerName;
 	Sessions.emplace_back(&newsession);
+	ApplicationMutex.unlock();
 	wcout << L"Leaving constructor\n";
-	ApplicationAccessGuard.~lock_guard();
 	return std::move(newsession);
 }

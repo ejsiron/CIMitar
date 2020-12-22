@@ -276,10 +276,10 @@ namespace CIMitar
 		Class GetClass(const std::wstring& Name);
 		Class GetClass(const std::wstring& Classname, const std::wstring& Name);
 
-		friend Session NewSession();
-		friend Session NewSession(const std::wstring ComputerName);
-		friend Session NewSession(const SessionOptions& Options);
-		friend Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
+		friend Session&& NewSession();
+		friend Session&& NewSession(const std::wstring ComputerName);
+		friend Session&& NewSession(const SessionOptions& Options);
+		friend Session&& NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
@@ -855,10 +855,10 @@ namespace CIMitar
 		// schema
 	};
 
-	Session NewSession();
-	Session NewSession(const std::wstring ComputerName);
-	Session NewSession(const SessionOptions& Options);
-	Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
+	Session&& NewSession();
+	Session&& NewSession(const std::wstring ComputerName);
+	Session&& NewSession(const SessionOptions& Options);
+	Session&& NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 	
 	void SetDefaultNamespace(const std::wstring& Namespace);
 	const std::wstring& GetDefaultNamespace();
