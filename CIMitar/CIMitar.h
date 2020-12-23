@@ -228,7 +228,6 @@ namespace CIMitar
 	private:
 		std::vector<UserCredentials> TargetCredentials{};
 		std::vector<UserCredentials> ProxyCredentials{};
-
 	public:
 		Option<bool> CheckCACert{};
 		Option<bool> CheckCertCN{};
@@ -280,6 +279,7 @@ namespace CIMitar
 		friend Session NewSession(const std::wstring ComputerName);
 		friend Session NewSession(const SessionOptions& Options);
 		friend Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
+		friend Session GetDefaultSession() noexcept;
 	};
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
@@ -332,24 +332,6 @@ namespace CIMitar
 		Option<std::wstring> ResourceURIPrefix{};
 		Option<Interval> Timeout{};
 		Option<bool> ProvideMachineID{ false };
-	};
-
-	template <typename SubscriberType, typename ReturnType>
-	class CIMOperatorBase :WithOptions
-	{
-	private:
-		std::wstring cimnamespace;
-		bool keysonly{ false };
-	protected:
-		Session& session;
-		CIMOperatorBase(Session& OperatingSession, std::wstring& Namespace);
-		virtual void ReportError() = 0;
-		virtual void ReportResult(ReturnType retval) = 0;
-		virtual void ReportCompletion() = 0;
-	public:
-		OperationOptions Options{};
-		const bool IsRunning();
-		void Cancel();
 	};
 
 	enum class CIMType
@@ -834,17 +816,22 @@ namespace CIMitar
 		std::wstring name{};
 		std::wstring classnamespace{};
 		std::wstring servername{};
+		std::wstring ownerclassname{};
 		unsigned int flags{ 0 };
 		unsigned int hashcode{ 0 };
 		bool empty{ false };
+		bool isstatic{false};
+		bool isdynamic{ false };
 		friend class Session;
 	public:
 		virtual ~Class() = default;
 		const std::wstring Name() const noexcept { return name; }
 		const std::wstring Namespace() const noexcept { return classnamespace; }
 		const std::wstring ServerName() const noexcept { return servername; }
-		Class& GetOwningClass();
+		const std::wstring GetOwningClassName() { return ownerclassname; }
 		const bool IsEmpty() const noexcept { return empty; }
+		const bool IsStatic() const noexcept { return isstatic; }
+		const bool IsDynamic() const noexcept { return isdynamic; }
 		const bool IsAssociation() const noexcept { return flags | MI_FLAG_ASSOCIATION; }
 		const bool IsIndication() const noexcept { return flags | MI_FLAG_INDICATION; }
 		const bool IsAbstract() const noexcept { return flags | MI_FLAG_ABSTRACT; }
@@ -863,7 +850,8 @@ namespace CIMitar
 	void SetDefaultNamespace(const std::wstring& Namespace);
 	const std::wstring& GetDefaultNamespace();
 	inline void ResetNamespace() { SetDefaultNamespace(DefaultCIMNamespace); }
-	void SetDefaultSession(Session& NewDefaultSession);
+	void SetDefaultSession(Session& NewDefaultSession) noexcept;
+	Session GetDefaultSession() noexcept;
 	Class NewClass(Class& SourceClass);
 	Class NewClass(Instance& SourceInstance);
 	Instance NewInstance(std::wstring& ClassName);

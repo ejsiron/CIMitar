@@ -9,6 +9,8 @@
 #include <regex>
 #include <shared_mutex>
 
+#include <iostream>
+
 using namespace std;
 using namespace CIMitar;
 using namespace CIMitar::Formatters;
@@ -22,18 +24,28 @@ using namespace CIMitar::Infrastructure;
 ***************************************************************************/
 
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
-static list<MI_Session*> Sessions{};
+static map<MI_Session*, Session*> Sessions{};
 static mutex SessionListMutex{};
 static shared_mutex ApplicationMutex{};
 #pragma endregion Housekeeping
 
 #pragma region Convenience Defaults
 Session* DefaultSession;
-bool ValidDefaultSession{ false };
-void CIMitar::SetDefaultSession(Session& NewDefaultSession)
+void CIMitar::SetDefaultSession(Session& NewDefaultSession) noexcept
 {
 	DefaultSession = &NewDefaultSession;
-	ValidDefaultSession = true;
+}
+
+Session CIMitar::GetDefaultSession() noexcept
+{
+	if (DefaultSession == nullptr)
+	{
+		return Session();
+	}
+	else
+	{
+		return *DefaultSession;
+	}
 }
 
 static std::wstring DefaultNamespace{ DefaultCIMNamespace };
@@ -56,7 +68,7 @@ void SessionDeleter(MI_Session* DoomedSession)
 	{
 		MI_Session_Close(DoomedSession, NULL, NULL);
 	}
-	Sessions.remove(DoomedSession);
+	Sessions.erase(DoomedSession);
 	if (Sessions.empty())
 	{
 		MI_Application_Close(&TheCimApplication);	// TODO: error-checking? nothing can be done
@@ -71,10 +83,9 @@ Session::Session()
 
 Session::~Session()
 {
-	if (TheSession.use_count() == 1)
+	if (TheSession.use_count() == 1  && DefaultSession == this)
 	{
-		DefaultSession = Sessions.size() ? Sessions.front() : nullptr;
-		wcout << L"Moved or deleted default session\n";
+		DefaultSession = Sessions.empty() ? nullptr : Sessions[0];
 	}
 }
 
@@ -82,9 +93,21 @@ const bool Session::Connect(const SessionProtocols* Protocol)
 {
 	Close();
 	const wchar_t* SelectedProtocol{ Protocol == nullptr ? nullptr : *Protocol == SessionProtocols::DCOM ? L"DCOM" : L"WINRM" };
-	wstring LocalNamesFilter{ JoinString(L'|', GetLocalNamesAndIPs()) };
-	const bool IsLocal{ regex_match(ComputerName, wregex(LocalNamesFilter)) };
+	bool IsLocal{ true };
+	wcout << L"Computer name: " << ComputerName << endl;
+	if (!ComputerName.empty())
+	{
+		wstring LocalNamesJoinedString{ JoinString(L'|', GetLocalNamesAndIPs()) };
+		wstring LocalNamesFilter{ regex_replace(LocalNamesJoinedString, wregex(L"\\."), L"\\.") };
+		wcout << L"Local name filter: " << LocalNamesFilter << endl;
+		OutputDebugString(LocalNamesJoinedString.c_str());
+		OutputDebugString(L"\n");
+		OutputDebugString(LocalNamesFilter.c_str());
+		OutputDebugString(L"\n");
+		IsLocal = !regex_match(ComputerName, wregex(LocalNamesFilter, std::regex_constants::icase));
+	}
 	const wchar_t* TargetName{ ComputerName.empty() || IsLocal ? nullptr : ComputerName.c_str() };
+	wcout << L"Target name has something: " << (TargetName != nullptr) << endl;
 	MI_Result Result{ MI_Application_NewSession(&TheCimApplication, SelectedProtocol, TargetName, NULL, NULL, NULL, TheSession.get()) };
 	// TODO: error checking and reporting
 	return Result == MI_RESULT_OK;
@@ -157,6 +180,6 @@ Session CIMitar::NewSession(const std::wstring ComputerName, const SessionOption
 			TheCimApplication = MI_APPLICATION_NULL;	// TODO: this is not enough
 	}
 	newsession.ComputerName = ComputerName;
-	Sessions.emplace_back(newsession.TheSession.get());
+	Sessions.emplace(newsession.TheSession.get(), &newsession);
 	return newsession;
 }

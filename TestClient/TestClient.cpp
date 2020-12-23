@@ -12,7 +12,12 @@ int main()
 	auto x = sess.GetClass(L"Win32_Service");
 	std::wcout << L"Class name: " << x.Name() << std::endl;
 	std::wcout << L"Class server name: " << x.ServerName() << std::endl;
-	//std::wcout << sess2.Connect() << std::endl;
+	std::wcout << L"Owning class name: " << x.GetOwningClassName() << std::endl;
+	std::wcout << sess2.Connect() << std::endl;
+	x = sess2.GetClass(L"Win32_Service");
+	std::wcout << L"Class name: " << x.Name() << std::endl;
+	std::wcout << L"Class server name: " << x.ServerName() << std::endl;
+	std::wcout << L"Owning class name: " << x.GetOwningClassName() << std::endl;
 	sess.Close();
 	//sess2.Close();
 	std::cout << "Hello World!\n";
