@@ -9,8 +9,6 @@
 #include <regex>
 #include <shared_mutex>
 
-#include <iostream>
-
 using namespace std;
 using namespace CIMitar;
 using namespace CIMitar::Formatters;
@@ -24,16 +22,18 @@ using namespace CIMitar::Infrastructure;
 ***************************************************************************/
 
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
-static list<Session*> Sessions{};
+static list<MI_Session*> Sessions{};
 static mutex SessionListMutex{};
 static shared_mutex ApplicationMutex{};
 #pragma endregion Housekeeping
 
 #pragma region Convenience Defaults
 Session* DefaultSession;
+bool ValidDefaultSession{ false };
 void CIMitar::SetDefaultSession(Session& NewDefaultSession)
 {
 	DefaultSession = &NewDefaultSession;
+	ValidDefaultSession = true;
 }
 
 static std::wstring DefaultNamespace{ DefaultCIMNamespace };
@@ -49,27 +49,33 @@ const std::wstring& CIMitar::GetDefaultNamespace()
 }
 #pragma endregion Convenience Defaults
 
-Session::Session() { std::wcout << L"Constructed\n"; }
+void SessionDeleter(MI_Session* DoomedSession)
+{
+	lock_guard ApplicationAccessGuard(ApplicationMutex);
+	if (DoomedSession->ft)
+	{
+		MI_Session_Close(DoomedSession, NULL, NULL);
+	}
+	Sessions.remove(DoomedSession);
+	if (Sessions.empty())
+	{
+		MI_Application_Close(&TheCimApplication);	// TODO: error-checking? nothing can be done
+	}
+}
+
+Session::Session()
+{
+	TheSession = shared_ptr<MI_Session>(new MI_Session, SessionDeleter);
+	*TheSession = MI_SESSION_NULL;
+}
 
 Session::~Session()
 {
-	wcout << L"Entering a destructor lock point for " << this->ComputerName  << endl;
-	Close();
-	lock_guard ApplicationAccessGuard(ApplicationMutex);
-	wcout << L"Before remove, count is " << Sessions.size() << endl;
-	Sessions.remove(this);
-	wcout << L"After remove, count is " << Sessions.size() << endl;
-	if (DefaultSession == this)
+	if (TheSession.use_count() == 1)
 	{
 		DefaultSession = Sessions.size() ? Sessions.front() : nullptr;
 		wcout << L"Moved or deleted default session\n";
 	}
-	if (Sessions.empty())
-	{
-		MI_Application_Close(&TheCimApplication);	// TODO: error-checking? nothing can be done
-		wcout << L"Closed the app";
-	}
-	wcout << L"Releasing a destructor lock\n";
 }
 
 const bool Session::Connect(const SessionProtocols* Protocol)
@@ -79,7 +85,7 @@ const bool Session::Connect(const SessionProtocols* Protocol)
 	wstring LocalNamesFilter{ JoinString(L'|', GetLocalNamesAndIPs()) };
 	const bool IsLocal{ regex_match(ComputerName, wregex(LocalNamesFilter)) };
 	const wchar_t* TargetName{ ComputerName.empty() || IsLocal ? nullptr : ComputerName.c_str() };
-	MI_Result Result{ MI_Application_NewSession(&TheCimApplication, SelectedProtocol, TargetName, NULL, NULL, NULL, &CIMSession) };
+	MI_Result Result{ MI_Application_NewSession(&TheCimApplication, SelectedProtocol, TargetName, NULL, NULL, NULL, TheSession.get()) };
 	// TODO: error checking and reporting
 	return Result == MI_RESULT_OK;
 }
@@ -97,7 +103,7 @@ const bool Session::Connect(const SessionProtocols Protocol)
 const bool Session::Close()
 {
 	// TODO: error checking
-	MI_Session_Close(&CIMSession, NULL, NULL);
+	MI_Session_Close(TheSession.get(), NULL, NULL);
 	return true;
 }
 
@@ -117,31 +123,30 @@ Class Session::GetClass(const std::wstring& Name) { return GetClass(GetDefaultNa
 Class Session::GetClass(const std::wstring& Namespace, const std::wstring& Name)
 {
 	ClassOpPack Op{ 1 };
-	MI_Session_GetClass(&CIMSession, 0, NULL, Namespace.c_str(), Name.c_str(), NULL, &Op.operation);
+	MI_Session_GetClass(TheSession.get(), 0, NULL, Namespace.c_str(), Name.c_str(), NULL, &Op.operation);
 	MI_Operation_GetClass(&Op.operation, &Op.pRetrievedClass, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
 	return Class{ Op.pRetrievedClass };	// MI_Session_GetClass should only return one result, and if it doesn't, Op will kill further results when it goes out of scope
 }
 
-Session&& CIMitar::NewSession()
+Session CIMitar::NewSession()
 {
 	return NewSession(L"");
 }
 
-Session&& CIMitar::NewSession(const std::wstring ComputerName)
+Session CIMitar::NewSession(const std::wstring ComputerName)
 {
 	return NewSession(ComputerName, SessionOptions{});
 }
 
-Session&& CIMitar::NewSession(const SessionOptions& Options)
+Session CIMitar::NewSession(const SessionOptions& Options)
 {
 	return NewSession(L"", Options);
 }
 
-Session&& CIMitar::NewSession(const std::wstring ComputerName, const SessionOptions& Options)
+Session CIMitar::NewSession(const std::wstring ComputerName, const SessionOptions& Options)
 {
-	wcout << L"Entering a constructor lock point" << endl;
 	Session newsession{};
-	ApplicationMutex.lock();
+	lock_guard ApplicationGuard{ ApplicationMutex };
 	if (Sessions.empty())
 	{
 		DefaultSession = &newsession;
@@ -152,8 +157,6 @@ Session&& CIMitar::NewSession(const std::wstring ComputerName, const SessionOpti
 			TheCimApplication = MI_APPLICATION_NULL;	// TODO: this is not enough
 	}
 	newsession.ComputerName = ComputerName;
-	Sessions.emplace_back(&newsession);
-	ApplicationMutex.unlock();
-	wcout << L"Leaving constructor\n";
-	return std::move(newsession);
+	Sessions.emplace_back(newsession.TheSession.get());
+	return newsession;
 }
