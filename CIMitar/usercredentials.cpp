@@ -1,8 +1,23 @@
 #include "CIMitar.h"
 #include <algorithm>
 #include <cstring>
+#include <string>
+#include <vector>
 
+using namespace std;
 using namespace CIMitar;
+
+const map<AuthenticationTypes, wstring> AuthTypeMap = {
+	{AuthenticationTypes::DEFAULT, MI_AUTH_TYPE_DEFAULT},
+	{AuthenticationTypes::NONE, MI_AUTH_TYPE_NONE},
+	{AuthenticationTypes::DIGEST, MI_AUTH_TYPE_DIGEST},
+	{AuthenticationTypes::NEGO_WITH_CREDS, MI_AUTH_TYPE_NEGO_WITH_CREDS},
+	{AuthenticationTypes::NEGO_NO_CREDS, MI_AUTH_TYPE_NEGO_NO_CREDS},
+	{AuthenticationTypes::BASIC, MI_AUTH_TYPE_BASIC},
+	{AuthenticationTypes::KERBEROS, MI_AUTH_TYPE_KERBEROS},
+	{AuthenticationTypes::CLIENT_CERTS, MI_AUTH_TYPE_CLIENT_CERTS},
+	{AuthenticationTypes::NTLM, MI_AUTH_TYPE_NTLM}
+};
 
 // "volatile" to hopefully prevent the compiler from optimizing this call away during destruction
 static volatile void* ObliterateString(std::unique_ptr<wchar_t[]>& DoomedString)
@@ -22,6 +37,25 @@ static std::unique_ptr<wchar_t[]> CopyPassword(const wchar_t* Source) noexcept
 	ObliterateString(Destination);
 	wcscpy_s(Destination.get(), PasswordBufferLength, Source);
 	return Destination;
+}
+
+UserCredentials::UserCredentials(MI_UserCredentials* Credentials) noexcept
+{
+	for (auto const& AuthType : AuthTypeMap)
+	{
+		if (!AuthType.second.compare(Credentials->authenticationType))
+		{
+			authenticationtype = AuthType.first;
+		}
+	}
+	if (authenticationtype == AuthenticationTypes::CLIENT_CERTS)
+	{
+		credentials = Credentials->credentials.certificateThumbprint;
+	}
+	else
+	{
+		credentials = UsernamePasswordCreds(&Credentials->credentials.usernamePassword);
+	}
 }
 
 UsernamePasswordCreds::UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept :
@@ -76,8 +110,3 @@ volatile const MI_UsernamePasswordCreds UsernamePasswordCreds::operator()() cons
 {
 	return MI_UsernamePasswordCreds{ domain.c_str(), username.c_str(), password.get() };
 }
-//
-//constexpr UserCredentials::UserCredentials(MI_UserCredentials) noexcept
-//{
-//
-//}

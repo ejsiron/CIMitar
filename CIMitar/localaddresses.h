@@ -1,8 +1,8 @@
 #pragma once
-#include <set>
+#include <vector>
 #include <string>
 
 namespace CIMitar::Infrastructure
 {
-	const std::set<std::wstring> GetLocalNamesAndIPs() noexcept;
+	const std::vector<std::wstring> GetLocalNamesAndIPs() noexcept;
 }

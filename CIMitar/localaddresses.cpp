@@ -2,9 +2,6 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
-#include <algorithm>
-#include <iterator>
-#include <vector>
 #include "localaddresses.h"
 
 #pragma comment(lib, "iphlpapi.lib") // *UnicastIpAddress* and *Mib* functions
@@ -12,7 +9,7 @@
 
 using namespace std;
 
-void GetLocalNames(std::set<std::wstring>& Addresses) noexcept
+void GetLocalNames(std::vector<std::wstring>& Addresses) noexcept
 {
 	try
 	{
@@ -34,12 +31,7 @@ void GetLocalNames(std::set<std::wstring>& Addresses) noexcept
 			} while (GetNameResult == ERROR_MORE_DATA);
 			if (!Buffer.empty() && Buffer[0] != 0)
 			{
-				wstring Name{};
-				Name.resize(BufferSize);
-				transform(Buffer.cbegin(), Buffer.cend(), back_inserter(Name), [](wchar_t c)
-					{ return tolower(static_cast<unsigned char>(c)); }
-				);
-				Addresses.insert(Name);
+				Addresses.emplace_back(Buffer.data());
 			}
 		}
 	}
@@ -49,9 +41,9 @@ void GetLocalNames(std::set<std::wstring>& Addresses) noexcept
 	}
 }
 
-void GetLocalIPs(std::set<std::wstring>& Addresses) noexcept
+void GetLocalIPs(std::vector<std::wstring>& Addresses) noexcept
 {
-	constexpr size_t MaxAddressTextLength{ 46 };	// to hold IPv4 or IPv6
+	constexpr size_t MaxAddressTextLength{ 46 };	// enough to hold IPv4 or IPv6
 	wchar_t szAddress[MaxAddressTextLength]{ 0 };
 	PMIB_UNICASTIPADDRESS_TABLE pAddressTable{ nullptr };
 	try
@@ -63,9 +55,11 @@ void GetLocalIPs(std::set<std::wstring>& Addresses) noexcept
 			{
 				auto& CurrentProtocol = pAddressTable->Table[i].Address.si_family;
 				auto& CurrentAdapterIndex = pAddressTable->Table[i].InterfaceIndex;
-				auto& RawAddress = pAddressTable->Table[i].Address;
-				InetNtop(CurrentProtocol, &RawAddress, szAddress, MaxAddressTextLength);
-				Addresses.insert(szAddress);
+				VOID* RawAddress = CurrentProtocol == AF_INET ?
+					static_cast<VOID*>(&pAddressTable->Table[i].Address.Ipv4.sin_addr) :
+					&pAddressTable->Table[i].Address.Ipv6.sin6_addr;
+				InetNtop(CurrentProtocol, RawAddress, szAddress, MaxAddressTextLength);
+				Addresses.emplace_back(szAddress);
 			}
 			FreeMibTable(pAddressTable);
 		}
@@ -76,9 +70,9 @@ void GetLocalIPs(std::set<std::wstring>& Addresses) noexcept
 	}
 }
 
-const std::set<std::wstring> CIMitar::Infrastructure::GetLocalNamesAndIPs() noexcept
+const std::vector<std::wstring> CIMitar::Infrastructure::GetLocalNamesAndIPs() noexcept
 {
-	std::set<std::wstring> Addresses;	// could throw but if there isn't enough memory for an empty set then the system is in trouble anyway
+	std::vector<std::wstring> Addresses;	// could throw but if there isn't enough memory for an empty set then the system is in trouble anyway
 	GetLocalNames(Addresses);
 	GetLocalIPs(Addresses);
 	return Addresses;

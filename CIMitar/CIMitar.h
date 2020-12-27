@@ -101,6 +101,7 @@ namespace CIMitar
 		std::wstring domain;
 		std::wstring username;
 		std::unique_ptr<wchar_t[]> password;	// memory securely wiped at destruction, but not protected in-memory
+		friend class WithOptions;
 	public:
 		//UsernamePasswordCreds() noexcept {}
 		UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
@@ -113,7 +114,7 @@ namespace CIMitar
 		volatile const MI_UsernamePasswordCreds operator()() const noexcept;
 	};
 
-	// only compares domain & username to prevent password leaks
+	// only compares domain & username to reduce password leaks
 	const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 	const bool operator!=(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 
@@ -136,13 +137,13 @@ namespace CIMitar
 	{
 	private:
 		AuthenticationTypes authenticationtype{ AuthenticationTypes::DEFAULT };
-		std::variant<UsernamePasswordCreds, std::wstring> credentials;
+		std::variant<std::wstring, UsernamePasswordCreds> credentials;
+		friend class WithOptions;
 	public:
-		// UserCredentials() noexcept = default;
+		UserCredentials(MI_UserCredentials* Credentials) noexcept;
 		UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(std::move(UsernamePasswordCreds(Credentials))) {}
 		UserCredentials(const std::wstring& CertificateThumbprint) noexcept : credentials(CertificateThumbprint) {}
-		// add UsernamePasswordCreds constructor
-		// add member access
+		UserCredentials(const UsernamePasswordCreds& Credentials) noexcept :credentials(Credentials) {}
 	};
 
 	class Error
@@ -184,6 +185,7 @@ namespace CIMitar
 		std::wstring customname;	// deliberately uninitialized since it has limited use
 		T value{};
 		bool overrideflag{ false };
+		friend class WithOptions;
 	public:
 		Option()noexcept {}
 		Option(T Value) noexcept {}
@@ -228,6 +230,7 @@ namespace CIMitar
 	private:
 		std::vector<UserCredentials> TargetCredentials{};
 		std::vector<UserCredentials> ProxyCredentials{};
+		friend class Session;
 	public:
 		Option<bool> CheckCACert{};
 		Option<bool> CheckCertCN{};

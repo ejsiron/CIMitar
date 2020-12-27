@@ -3,8 +3,6 @@
 #include "localaddresses.h"
 #include "operation.h"
 #include "stringformatters.h"
-#include <algorithm>
-#include <list>
 #include <mutex>
 #include <regex>
 #include <shared_mutex>
@@ -15,19 +13,12 @@ using namespace std;
 using namespace CIMitar;
 using namespace CIMitar::Formatters;
 using namespace CIMitar::Infrastructure;
-
-#pragma region Housekeeping
-/***************************************************************************
-*
-* These items must exist but never need to be visible to library consumers
-*
-***************************************************************************/
+using namespace std::regex_constants;
 
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
 static map<MI_Session*, Session*> Sessions{};
 static mutex SessionListMutex{};
 static shared_mutex ApplicationMutex{};
-#pragma endregion Housekeeping
 
 #pragma region Convenience Defaults
 Session* DefaultSession;
@@ -94,20 +85,22 @@ const bool Session::Connect(const SessionProtocols* Protocol)
 	Close();
 	const wchar_t* SelectedProtocol{ Protocol == nullptr ? nullptr : *Protocol == SessionProtocols::DCOM ? L"DCOM" : L"WINRM" };
 	bool IsLocal{ true };
-	wcout << L"Computer name: " << ComputerName << endl;
 	if (!ComputerName.empty())
 	{
-		wstring LocalNamesJoinedString{ JoinString(L'|', GetLocalNamesAndIPs()) };
-		wstring LocalNamesFilter{ regex_replace(LocalNamesJoinedString, wregex(L"\\."), L"\\.") };
-		wcout << L"Local name filter: " << LocalNamesFilter << endl;
-		OutputDebugString(LocalNamesJoinedString.c_str());
-		OutputDebugString(L"\n");
-		OutputDebugString(LocalNamesFilter.c_str());
-		OutputDebugString(L"\n");
-		IsLocal = !regex_match(ComputerName, wregex(LocalNamesFilter, std::regex_constants::icase));
+		wstring LocalNamesFilter{ JoinString(L'|', GetLocalNamesAndIPs()) };
+		LocalNamesFilter = regex_replace(LocalNamesFilter, wregex(L"\\."), L"\\.");
+		IsLocal = regex_match(ComputerName, wregex(LocalNamesFilter, icase));
 	}
 	const wchar_t* TargetName{ ComputerName.empty() || IsLocal ? nullptr : ComputerName.c_str() };
-	wcout << L"Target name has something: " << (TargetName != nullptr) << endl;
+	MI_DestinationOptions DestinationOptions;
+	MI_Result CreateDestinationOptions{ MI_Application_NewDestinationOptions(&TheCimApplication, &DestinationOptions) };
+	if (CreateDestinationOptions == MI_RESULT_OK)
+	{
+		if (Options.CheckCACert.IsOverridden())
+		{
+			MI_DestinationOptions_SetCertCACheck(&DestinationOptions, Options.CheckCACert.get());
+		}
+	}
 	MI_Result Result{ MI_Application_NewSession(&TheCimApplication, SelectedProtocol, TargetName, NULL, NULL, NULL, TheSession.get()) };
 	// TODO: error checking and reporting
 	return Result == MI_RESULT_OK;
