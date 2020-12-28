@@ -92,13 +92,16 @@ const bool Session::Connect(const SessionProtocols* Protocol)
 		IsLocal = regex_match(ComputerName, wregex(LocalNamesFilter, icase));
 	}
 	const wchar_t* TargetName{ ComputerName.empty() || IsLocal ? nullptr : ComputerName.c_str() };
-	MI_DestinationOptions DestinationOptions;
-	MI_Result CreateDestinationOptions{ MI_Application_NewDestinationOptions(&TheCimApplication, &DestinationOptions) };
-	if (CreateDestinationOptions == MI_RESULT_OK)
+	if (Options.overriddenoptions.size() || this->HasCustomOptions())
 	{
-		if (Options.CheckCACert.IsOverridden())
+		MI_DestinationOptions DestinationOptions;
+		MI_Result CreateDestinationOptions{ MI_Application_NewDestinationOptions(&TheCimApplication, &DestinationOptions) };
+		if (CreateDestinationOptions == MI_RESULT_OK)
 		{
-			MI_DestinationOptions_SetCertCACheck(&DestinationOptions, Options.CheckCACert.get());
+			if (Options.CheckCACert.IsOverridden())
+			{
+				MI_DestinationOptions_SetCertCACheck(&DestinationOptions, Options.CheckCACert.get());
+			}
 		}
 	}
 	MI_Result Result{ MI_Application_NewSession(&TheCimApplication, SelectedProtocol, TargetName, NULL, NULL, NULL, TheSession.get()) };

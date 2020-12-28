@@ -3,14 +3,47 @@
 using namespace CIMitar;
 using namespace std;
 
+const bool WithOptions::HasCustomOptions() const noexcept
+{
+	return CustomStringOptions.size() && CustomNumberOptions.size();
+}
+
+std::vector<MI_Result> WithOptions::ApplyCustomOptions(variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept
+{
+	std::vector<MI_Result> Results{};
+	if (auto pOptions{ std::get_if<MI_OperationOptions*>(&OptionPack) })
+	{
+		/*for (auto NumericOption : this->CustomNumberOptions)
+		{
+			Results.emplace_back(MI_OperationOptions_SetNumber())
+		}*/
+	}
+	else if (auto pOptions{ std::get_if<MI_DestinationOptions*>(&OptionPack) })
+	{
+		/*for (auto const& NumericOption : this->CustomNumberOptions)
+		{
+			Results.emplace_back(MI_DestinationOptions_SetNumber(*pOptions, NumericOption.first.c_str(), NumericOption.second.value));
+		}
+		for (auto const& StringOption : this->CustomStringOptions)
+		{
+			Results.emplace_back(MI_DestinationOptions_SetString(*pOptions, StringOption.first.c_str(), StringOption.second.value.c_str()));
+		}*/
+	}
+	else
+	{
+		Results.push_back(MI_RESULT_INVALID_PARAMETER);
+	}
+	return Results;
+}
+
 void WithOptions::AddCustom(wstring Name, wstring Value)
 {
-	CustomStringOptions[Name] = Value;
+	CustomStringOptions[Name] = CustomOption(Name, Value);
 }
 
 void WithOptions::AddCustom(wstring Name, unsigned int Value)
 {
-	CustomNumberOptions[Name] = Value;
+	CustomNumberOptions[Name] = CustomOption(Name, Value);
 }
 
 void WithOptions::SetCustom(wstring Name, wstring Value)
