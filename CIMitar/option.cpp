@@ -3,12 +3,12 @@
 using namespace CIMitar;
 using namespace std;
 
-const bool WithOptions::HasCustomOptions() const noexcept
+const bool SessionOptions::HasCustomOptions() const noexcept
 {
 	return CustomStringOptions.size() && CustomNumberOptions.size();
 }
 
-std::vector<MI_Result> WithOptions::ApplyCustomOptions(variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept
+std::vector<MI_Result> Session::ApplyCustomOptions(variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept
 {
 	std::vector<MI_Result> Results{};
 	if (auto pOptions{ std::get_if<MI_OperationOptions*>(&OptionPack) })
@@ -36,22 +36,22 @@ std::vector<MI_Result> WithOptions::ApplyCustomOptions(variant<MI_OperationOptio
 	return Results;
 }
 
-void WithOptions::AddCustom(wstring Name, wstring Value)
+void SessionOptions::AddCustom(wstring Name, wstring Value)
 {
-	CustomStringOptions[Name] = CustomOption(Name, Value);
+	CustomStringOptions[Name] = CustomSessionOption{ Name, Value };
 }
 
-void WithOptions::AddCustom(wstring Name, unsigned int Value)
+void SessionOptions::AddCustom(wstring Name, unsigned int Value)
 {
-	CustomNumberOptions[Name] = CustomOption(Name, Value);
+	CustomNumberOptions[Name] = CustomSessionOption{ Name, Value };
 }
 
-void WithOptions::SetCustom(wstring Name, wstring Value)
+void SessionOptions::SetCustom(wstring Name, wstring Value)
 {
 	AddCustom(Name, Value);
 }
 
-void WithOptions::SetCustom(wstring Name, unsigned int Value)
+void SessionOptions::SetCustom(wstring Name, unsigned int Value)
 {
 	AddCustom(Name, Value);
 }
@@ -66,35 +66,35 @@ static void RemoveCustomOption(wstring Name, map<wstring, T>& OptionList)
 	}
 }
 
-void WithOptions::RemoveCustomString(wstring Name)
+void SessionOptions::RemoveCustomString(wstring Name)
 {
 	RemoveCustomOption(Name, CustomStringOptions);
 }
 
-void WithOptions::RemoveAllCustomStrings()
+void SessionOptions::RemoveAllCustomStrings()
 {
 	CustomStringOptions.clear();
 }
 
-void WithOptions::RemoveCustomNumber(wstring Name)
+void SessionOptions::RemoveCustomNumber(wstring Name)
 {
 	RemoveCustomOption(Name, CustomNumberOptions);
 }
 
-void WithOptions::RemoveAllCustomNumbers()
+void SessionOptions::RemoveAllCustomNumbers()
 {
 	CustomNumberOptions.clear();
 }
 
-void WithOptions::RemoveAllCustom()
+void SessionOptions::RemoveAllCustom()
 {
 	RemoveAllCustomNumbers();
 	RemoveAllCustomStrings();
 }
 
-void WithOptions::ResetAll()
+void SessionOptions::ResetAll()
 {
-	*this = WithOptions{};
+	*this = SessionOptions();
 }
 
 void SessionOptions::AddTargetCredentials(const UserCredentials& Credentials) noexcept

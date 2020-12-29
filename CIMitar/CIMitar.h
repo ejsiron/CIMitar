@@ -196,12 +196,29 @@ namespace CIMitar
 	// TODO: investigate templating an application function that takes the *Set* function and translates parameters
 
 	template <typename T>
-	class InnateOption:public Option<T>
+	class InnateSessionOption:public Option<T>
 	{
 	private:
 		std::set<const void*>& optionlist;
 	public:
-		InnateOption(std::set<const void*>& OwningOptionList) noexcept :optionlist(OwningOptionList) {}
+		void swap(InnateSessionOption& SwapSource) noexcept
+		{
+			std::swap(this->value, SwapSource.value);
+			std::swap(this->optionlist, SwapSource.optionlist);
+		}
+		InnateSessionOption(std::set<const void*>& OwningOptionList) noexcept :optionlist(OwningOptionList) {}
+		InnateSessionOption(const InnateSessionOption& CopySource) noexcept : optionlist(CopySource.optionlist)
+		{
+			this->value = CopySource.value;
+		}
+		InnateSessionOption& operator=(InnateSessionOption CopySource) noexcept
+		{
+			if (this != &CopySource)
+			{
+				InnateSessionOption(CopySource).swap(this);
+			}
+			return *this;
+		}
 		void Reset() noexcept { optionlist.erase(this); }
 		void Set(T Value) override{ this->value = Value; optionlist.insert(this); }
 		const bool IsOverridden() const noexcept
@@ -210,31 +227,65 @@ namespace CIMitar
 			return found != optionlist.end();
 		}
 	};
+	template <typename T>
+	void swap(InnateSessionOption<T>& lhs, InnateSessionOption<T>& rhs)
+	{
+		lhs.swap(rhs);
+	}
 
 	template <typename T>
-	class CustomOption :public Option<T>
+	class CustomSessionOption :public Option<T>
 	{
 	private:
 		std::wstring customname{};
 		friend class WithOptions;
 	public:
-		CustomOption(std::wstring CustomName, T Value) :customname(CustomName), Option<T>(Value) {}
+		CustomSessionOption() noexcept {}
+		CustomSessionOption(std::wstring CustomName, T Value) :customname(CustomName), Option<T>(Value) {}
+		void SetName(std::wstring& NewName) { customname = NewName; }
 	};
 
-	class WithOptions
+	class SessionOptions
 	{
 	private:
-		std::map <std::wstring, CustomOption<std::wstring>> CustomStringOptions{};
-		std::map <std::wstring, CustomOption<unsigned int>> CustomNumberOptions{};
-	protected:
-		WithOptions() = default;
+		std::set<const void*> overriddenoptions{};
+		std::map <std::wstring, CustomSessionOption<unsigned int>> CustomNumberOptions{};
+		std::map <std::wstring, CustomSessionOption<std::wstring>> CustomStringOptions{};
+		std::vector<UserCredentials> TargetCredentials{};
+		std::vector<UserCredentials> ProxyCredentials{};
 		const bool HasCustomOptions() const noexcept;
-		std::vector<MI_Result> ApplyCustomOptions(std::variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept;
+		friend class Session;
 	public:
-		WithOptions(const WithOptions&) = default;
-		WithOptions& operator=(const WithOptions&) = default;
-		WithOptions(WithOptions&&) = default;
-		WithOptions& operator=(WithOptions&&) = default;
+		SessionOptions() noexcept {}
+		SessionOptions(const SessionOptions&) noexcept = default;
+		SessionOptions& operator=(const SessionOptions&) noexcept = default;
+		SessionOptions(SessionOptions&&) noexcept = default;
+		SessionOptions& operator=(SessionOptions&&) noexcept = default;
+		InnateSessionOption<bool> CheckCACert{overriddenoptions};
+		InnateSessionOption<bool> CheckCertCN{ overriddenoptions };
+		InnateSessionOption<bool> CheckCertRevocation{ overriddenoptions };
+		InnateSessionOption<unsigned int> Port{ overriddenoptions };
+		InnateSessionOption<bool> EncodePortInSPN{ overriddenoptions };
+		InnateSessionOption<SessionPrefixOverrides> PrefixOverride{ overriddenoptions };
+		InnateSessionOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ overriddenoptions };
+		InnateSessionOption<unsigned int> MaxPacketSizeOverride{ overriddenoptions };
+		InnateSessionOption<SessionPacketEncodingOptions> PacketEncoding{ overriddenoptions };
+		InnateSessionOption<bool> PacketIntegrity{ overriddenoptions };
+		InnateSessionOption<bool> PacketPrivacy{ overriddenoptions };
+		InnateSessionOption<SessionProxyOptions> SessionProxyOption{ overriddenoptions };
+		InnateSessionOption<bool> ProvideMachineName{ overriddenoptions };
+		InnateSessionOption<SessionErrorModes> SessionErrorMode{ overriddenoptions };
+		InnateSessionOption<Interval> Timeout{ overriddenoptions };
+		InnateSessionOption<std::wstring> OperationLocale{ overriddenoptions };
+		InnateSessionOption<std::wstring> UILocale{ overriddenoptions };
+		InnateSessionOption<SessionProtocols> Protocol{ overriddenoptions };
+		InnateSessionOption<bool> UseHTTPS{ overriddenoptions };
+		void AddTargetCredentials(const UserCredentials& Credentials) noexcept;
+		void AddTargetCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		void AddProxyCredentials(const UserCredentials& Credentials) noexcept;
+		void AddProxyCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		void ClearTargetCredentials() noexcept;
+		void ClearProxyCredentials() noexcept;
 		void AddCustom(std::wstring Name, std::wstring Value);
 		void AddCustom(std::wstring Name, unsigned int Value);
 		void SetCustom(std::wstring Name, std::wstring Value);
@@ -247,52 +298,22 @@ namespace CIMitar
 		void ResetAll();
 	};
 
-	class SessionOptions
-	{
-	private:
-		std::set<const void*> overriddenoptions{};
-		std::vector<UserCredentials> TargetCredentials{};
-		std::vector<UserCredentials> ProxyCredentials{};
-		friend class Session;
-	public:
-		InnateOption<bool> CheckCACert{overriddenoptions};
-		InnateOption<bool> CheckCertCN{ overriddenoptions };
-		InnateOption<bool> CheckCertRevocation{ overriddenoptions };
-		InnateOption<unsigned int> Port{ overriddenoptions };
-		InnateOption<bool> EncodePortInSPN{ overriddenoptions };
-		InnateOption<SessionPrefixOverrides> PrefixOverride{ overriddenoptions };
-		InnateOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ overriddenoptions };
-		InnateOption<unsigned int> MaxPacketSizeOverride{ overriddenoptions };
-		InnateOption<SessionPacketEncodingOptions> PacketEncoding{ overriddenoptions };
-		InnateOption<bool> PacketIntegrity{ overriddenoptions };
-		InnateOption<bool> PacketPrivacy{ overriddenoptions };
-		InnateOption<SessionProxyOptions> SessionProxyOption{ overriddenoptions };
-		InnateOption<bool> ProvideMachineName{ overriddenoptions };
-		InnateOption<SessionErrorModes> SessionErrorMode{ overriddenoptions };
-		InnateOption<Interval> Timeout{ overriddenoptions };
-		InnateOption<std::wstring> OperationLocale{ overriddenoptions };
-		InnateOption<std::wstring> UILocale{ overriddenoptions };
-		InnateOption<SessionProtocols> Protocol{ overriddenoptions };
-		InnateOption<bool> UseHTTPS{ overriddenoptions };
-		void AddTargetCredentials(const UserCredentials& Credentials) noexcept;
-		void AddTargetCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
-		void AddProxyCredentials(const UserCredentials& Credentials) noexcept;
-		void AddProxyCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
-		void ClearTargetCredentials() noexcept;
-		void ClearProxyCredentials() noexcept;
-	};
+	class Class;
 
-	class Class; //forward declaration for Session visibility
-
-	class Session :WithOptions
+	class Session
 	{
 	private:
 		std::shared_ptr<MI_Session> TheSession;
 		std::wstring ComputerName;
+		std::vector<MI_Result> ApplyCustomOptions(std::variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept;
 		const bool Connect(const SessionProtocols* Protocol);
 		Session();
 		// TODO: add accounting mechanism for operations
 	public:
+		Session(const Session&) noexcept = default;
+		Session& operator=(const Session&) noexcept = default;
+		Session(Session&&) noexcept = default;
+		Session& operator=(Session&&) noexcept = default;
 		virtual ~Session();
 		SessionOptions Options{};
 		const bool Connect();
@@ -349,17 +370,17 @@ namespace CIMitar
 	private:
 		std::set<const void*> overriddenoptions;
 	public:
-		InnateOption<bool> WarningMessageChannel{ overriddenoptions };
-		InnateOption<bool> VerboseMessageChannel{ overriddenoptions };
-		InnateOption<bool> DebugMessageChannel{ overriddenoptions };
-		InnateOption<CallbackModes> PromptUserMode{ overriddenoptions };
-		InnateOption<CallbackModes> PromptUserRegularMode{ overriddenoptions };
-		InnateOption<CallbackModes> WriteErrorMode{ overriddenoptions };
-		InnateOption<bool> Force32Bit{ overriddenoptions };
-		InnateOption<std::wstring> ResourceURI{ overriddenoptions };
-		InnateOption<std::wstring> ResourceURIPrefix{ overriddenoptions };
-		InnateOption<Interval> Timeout{ overriddenoptions };
-		InnateOption<bool> ProvideMachineID{ overriddenoptions };
+		InnateSessionOption<bool> WarningMessageChannel{ overriddenoptions };
+		InnateSessionOption<bool> VerboseMessageChannel{ overriddenoptions };
+		InnateSessionOption<bool> DebugMessageChannel{ overriddenoptions };
+		InnateSessionOption<CallbackModes> PromptUserMode{ overriddenoptions };
+		InnateSessionOption<CallbackModes> PromptUserRegularMode{ overriddenoptions };
+		InnateSessionOption<CallbackModes> WriteErrorMode{ overriddenoptions };
+		InnateSessionOption<bool> Force32Bit{ overriddenoptions };
+		InnateSessionOption<std::wstring> ResourceURI{ overriddenoptions };
+		InnateSessionOption<std::wstring> ResourceURIPrefix{ overriddenoptions };
+		InnateSessionOption<Interval> Timeout{ overriddenoptions };
+		InnateSessionOption<bool> ProvideMachineID{ overriddenoptions };
 	};
 
 	enum class CIMType

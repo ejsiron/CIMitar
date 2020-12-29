@@ -92,7 +92,7 @@ const bool Session::Connect(const SessionProtocols* Protocol)
 		IsLocal = regex_match(ComputerName, wregex(LocalNamesFilter, icase));
 	}
 	const wchar_t* TargetName{ ComputerName.empty() || IsLocal ? nullptr : ComputerName.c_str() };
-	if (Options.overriddenoptions.size() || this->HasCustomOptions())
+	if (Options.overriddenoptions.size() || Options.HasCustomOptions())
 	{
 		MI_DestinationOptions DestinationOptions;
 		MI_Result CreateDestinationOptions{ MI_Application_NewDestinationOptions(&TheCimApplication, &DestinationOptions) };
