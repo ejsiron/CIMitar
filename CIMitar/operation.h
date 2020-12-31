@@ -42,4 +42,10 @@ public:
 	const MI_Class* pRetrievedClass{ nullptr };
 };
 
+class InstanceOpPack : public BaseOperationPack
+{
+	using BaseOperationPack::BaseOperationPack;
+	const MI_Instance* pRetrievedInstance{ nullptr };
+};
+
 #endif CIMITAR_OPERATION_H_INCLUDED

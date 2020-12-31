@@ -22,16 +22,17 @@ static shared_mutex ApplicationMutex{};
 
 #pragma region Convenience Defaults
 Session* DefaultSession;
+Session Session::NullSession = Session();
 void CIMitar::SetDefaultSession(Session& NewDefaultSession) noexcept
 {
 	DefaultSession = &NewDefaultSession;
 }
 
-Session CIMitar::GetDefaultSession() noexcept
+Session& CIMitar::GetDefaultSession() noexcept
 {
 	if (DefaultSession == nullptr)
 	{
-		return Session();
+		return Session::NullSession;
 	}
 	else
 	{
@@ -51,6 +52,17 @@ const std::wstring& CIMitar::GetDefaultNamespace()
 	return DefaultNamespace;
 }
 #pragma endregion Convenience Defaults
+
+void Session::swap(Session& SwapSource) noexcept
+{
+	TheSession.swap(SwapSource.TheSession);
+	ComputerName.swap(SwapSource.ComputerName);
+}
+
+void CIMitar::swap(Session& lhs, Session& rhs) noexcept
+{
+	lhs.swap(rhs);
+}
 
 void SessionDeleter(MI_Session* DoomedSession)
 {
@@ -72,9 +84,24 @@ Session::Session()
 	*TheSession = MI_SESSION_NULL;
 }
 
+Session::Session(const Session& CopySource) noexcept
+{
+	TheSession = CopySource.TheSession;
+	ComputerName = CopySource.ComputerName;
+}
+
+Session& Session::operator=(Session CopySource) noexcept
+{
+	if (this != &CopySource)
+	{
+		swap(CopySource);
+	}
+	return *this;
+}
+
 Session::~Session()
 {
-	if (TheSession.use_count() == 1  && DefaultSession == this)
+	if (TheSession.use_count() == 1 && DefaultSession == this)
 	{
 		DefaultSession = Sessions.empty() ? nullptr : Sessions[0];
 	}
@@ -138,13 +165,69 @@ const bool CIMitar::operator!=(const Session& lhs, const Session& rhs) noexcept
 }
 #pragma endregion
 
-Class Session::GetClass(const std::wstring& Name) { return GetClass(GetDefaultNamespace(), Name); }
-Class Session::GetClass(const std::wstring& Namespace, const std::wstring& Name)
+void MI_Class_Deleter(MI_Class* DoomedClass)
 {
-	ClassOpPack Op{ 1 };
-	MI_Session_GetClass(TheSession.get(), 0, NULL, Namespace.c_str(), Name.c_str(), NULL, &Op.operation);
-	MI_Operation_GetClass(&Op.operation, &Op.pRetrievedClass, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
-	return Class{ Op.pRetrievedClass };	// MI_Session_GetClass should only return one result, and if it doesn't, Op will kill further results when it goes out of scope
+	MI_Class_Delete(DoomedClass);
+}
+
+unique_ptr<MI_Class, void(*)(MI_Class*)> CloneClass(const MI_Class* SourceClass) noexcept
+{
+	MI_Class* pClonedClass;
+	MI_Class_Clone(SourceClass, &pClonedClass);
+	return unique_ptr<MI_Class, void(*)(MI_Class*)>(pClonedClass, MI_Class_Deleter);
+}
+
+vector<Class> Session::GetClassCore(const wstring& Namespace, const wstring ClassName, const unsigned int MaximumResults) noexcept
+{
+	std::vector<Class> Classes{};
+	if (TheSession != nullptr)
+	{
+		ClassOpPack Op{ MaximumResults };
+		MI_Session_GetClass(TheSession.get(), 0, NULL, Namespace.c_str(), ClassName.c_str(), NULL, &Op.operation);
+		do
+		{
+			MI_Operation_GetClass(&Op.operation, &Op.pRetrievedClass, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
+			Classes.emplace_back(Class(Op.pRetrievedClass));
+		} while (Op.More());
+	}
+	return Classes;
+}
+
+std::vector<Instance> Session::GetInstanceCore(const std::wstring& Namespace, const std::wstring ClassName, const unsigned int MaximumResults) noexcept
+{
+	std::vector<Instance> Instances{};
+	if (TheSession != nullptr)
+	{
+		InstanceOpPack{ MaximumResults };
+		MI_Session_GetInstance(TheSession.get(), 0, NULL, Namespace.c_str(), )
+	}
+}
+
+Class Session::GetClass(const std::wstring& ClassName) noexcept { return GetClass(GetDefaultNamespace(), ClassName); }
+Class Session::GetClass(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
+{
+	std::vector<Class> RetrievedClasses{ GetClassCore(Namespace, ClassName, 1) };
+	if (RetrievedClasses.empty())
+	{
+		return Class{ static_cast<const MI_Class*>(nullptr) };
+	}
+	else
+	{
+		return RetrievedClasses[0];
+	}
+}
+
+Instance Session::NewInstance(const std::wstring& ClassName) noexcept
+{
+	return NewInstance(GetDefaultNamespace(), ClassName);
+}
+
+Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
+{
+	InstanceOpPack Op{};
+	Class InstanceClass{ GetClass(ClassName) };
+	MI_Instance* CreatedInstance;
+	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.miclass.get(), &CreatedInstance);
 }
 
 Session CIMitar::NewSession()

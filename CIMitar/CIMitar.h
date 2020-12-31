@@ -185,7 +185,10 @@ namespace CIMitar
 		friend class WithOptions;
 	protected:
 		T value;
+#pragma warning(push)
+#pragma warning(disable: 26495)
 		Option() noexcept {}
+#pragma warning(pop)
 		Option(T Value) noexcept :value(Value) {}
 	public:
 		T& get() noexcept { return value; }
@@ -196,31 +199,28 @@ namespace CIMitar
 	// TODO: investigate templating an application function that takes the *Set* function and translates parameters
 
 	template <typename T>
-	class InnateSessionOption:public Option<T>
+	class ListedOption :public Option<T>
 	{
 	private:
 		std::set<const void*>& optionlist;
 	public:
-		void swap(InnateSessionOption& SwapSource) noexcept
+		void swap(ListedOption& SwapSource) noexcept
 		{
 			std::swap(this->value, SwapSource.value);
-			std::swap(this->optionlist, SwapSource.optionlist);
+			std::swap(optionlist, SwapSource.optionlist);
 		}
-		InnateSessionOption(std::set<const void*>& OwningOptionList) noexcept :optionlist(OwningOptionList) {}
-		InnateSessionOption(const InnateSessionOption& CopySource) noexcept : optionlist(CopySource.optionlist)
-		{
-			this->value = CopySource.value;
-		}
-		InnateSessionOption& operator=(InnateSessionOption CopySource) noexcept
+		ListedOption(std::set<const void*>& OwningOptionList) noexcept :optionlist(OwningOptionList) {}
+		ListedOption(const ListedOption& CopySource)noexcept :optionlist(CopySource.optionlist) { this->value = CopySource.value; }
+		ListedOption& operator=(ListedOption CopySource) noexcept
 		{
 			if (this != &CopySource)
 			{
-				InnateSessionOption(CopySource).swap(this);
+				swap(CopySource);
 			}
 			return *this;
 		}
 		void Reset() noexcept { optionlist.erase(this); }
-		void Set(T Value) override{ this->value = Value; optionlist.insert(this); }
+		void Set(T Value) override { this->value = Value; optionlist.insert(this); }
 		const bool IsOverridden() const noexcept
 		{
 			auto found{ optionlist.find(this) };
@@ -228,7 +228,7 @@ namespace CIMitar
 		}
 	};
 	template <typename T>
-	void swap(InnateSessionOption<T>& lhs, InnateSessionOption<T>& rhs)
+	void swap(ListedOption<T>& lhs, ListedOption<T>& rhs)
 	{
 		lhs.swap(rhs);
 	}
@@ -261,25 +261,25 @@ namespace CIMitar
 		SessionOptions& operator=(const SessionOptions&) noexcept = default;
 		SessionOptions(SessionOptions&&) noexcept = default;
 		SessionOptions& operator=(SessionOptions&&) noexcept = default;
-		InnateSessionOption<bool> CheckCACert{overriddenoptions};
-		InnateSessionOption<bool> CheckCertCN{ overriddenoptions };
-		InnateSessionOption<bool> CheckCertRevocation{ overriddenoptions };
-		InnateSessionOption<unsigned int> Port{ overriddenoptions };
-		InnateSessionOption<bool> EncodePortInSPN{ overriddenoptions };
-		InnateSessionOption<SessionPrefixOverrides> PrefixOverride{ overriddenoptions };
-		InnateSessionOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ overriddenoptions };
-		InnateSessionOption<unsigned int> MaxPacketSizeOverride{ overriddenoptions };
-		InnateSessionOption<SessionPacketEncodingOptions> PacketEncoding{ overriddenoptions };
-		InnateSessionOption<bool> PacketIntegrity{ overriddenoptions };
-		InnateSessionOption<bool> PacketPrivacy{ overriddenoptions };
-		InnateSessionOption<SessionProxyOptions> SessionProxyOption{ overriddenoptions };
-		InnateSessionOption<bool> ProvideMachineName{ overriddenoptions };
-		InnateSessionOption<SessionErrorModes> SessionErrorMode{ overriddenoptions };
-		InnateSessionOption<Interval> Timeout{ overriddenoptions };
-		InnateSessionOption<std::wstring> OperationLocale{ overriddenoptions };
-		InnateSessionOption<std::wstring> UILocale{ overriddenoptions };
-		InnateSessionOption<SessionProtocols> Protocol{ overriddenoptions };
-		InnateSessionOption<bool> UseHTTPS{ overriddenoptions };
+		ListedOption<bool> CheckCACert{ overriddenoptions };
+		ListedOption<bool> CheckCertCN{ overriddenoptions };
+		ListedOption<bool> CheckCertRevocation{ overriddenoptions };
+		ListedOption<unsigned int> Port{ overriddenoptions };
+		ListedOption<bool> EncodePortInSPN{ overriddenoptions };
+		ListedOption<SessionPrefixOverrides> PrefixOverride{ overriddenoptions };
+		ListedOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ overriddenoptions };
+		ListedOption<unsigned int> MaxPacketSizeOverride{ overriddenoptions };
+		ListedOption<SessionPacketEncodingOptions> PacketEncoding{ overriddenoptions };
+		ListedOption<bool> PacketIntegrity{ overriddenoptions };
+		ListedOption<bool> PacketPrivacy{ overriddenoptions };
+		ListedOption<SessionProxyOptions> SessionProxyOption{ overriddenoptions };
+		ListedOption<bool> ProvideMachineName{ overriddenoptions };
+		ListedOption<SessionErrorModes> SessionErrorMode{ overriddenoptions };
+		ListedOption<Interval> Timeout{ overriddenoptions };
+		ListedOption<std::wstring> OperationLocale{ overriddenoptions };
+		ListedOption<std::wstring> UILocale{ overriddenoptions };
+		ListedOption<SessionProtocols> Protocol{ overriddenoptions };
+		ListedOption<bool> UseHTTPS{ overriddenoptions };
 		void AddTargetCredentials(const UserCredentials& Credentials) noexcept;
 		void AddTargetCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
 		void AddProxyCredentials(const UserCredentials& Credentials) noexcept;
@@ -298,7 +298,9 @@ namespace CIMitar
 		void ResetAll();
 	};
 
+	// forward declarations for use in class Session
 	class Class;
+	class Instance;
 
 	class Session
 	{
@@ -307,27 +309,34 @@ namespace CIMitar
 		std::wstring ComputerName;
 		std::vector<MI_Result> ApplyCustomOptions(std::variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept;
 		const bool Connect(const SessionProtocols* Protocol);
+		std::vector<Class> GetClassCore(const std::wstring& Namespace, const std::wstring ClassName, const unsigned int MaximumResults) noexcept;
+		std::vector<Instance> GetInstanceCore(const std::wstring& Namespace, const std::wstring ClassName, const unsigned int MaximumResults) noexcept;
 		Session();
-		// TODO: add accounting mechanism for operations
+
 	public:
-		Session(const Session&) noexcept = default;
-		Session& operator=(const Session&) noexcept = default;
+		void swap(Session& SwapSource) noexcept;
+		Session(const Session&) noexcept;
+		Session& operator=(Session) noexcept;
 		Session(Session&&) noexcept = default;
 		Session& operator=(Session&&) noexcept = default;
 		virtual ~Session();
+		static Session NullSession;
 		SessionOptions Options{};
 		const bool Connect();
 		const bool Connect(const SessionProtocols Protocol);
 		const bool Close();
-		Class GetClass(const std::wstring& Name);
-		Class GetClass(const std::wstring& Classname, const std::wstring& Name);
+		Class GetClass(const std::wstring& Name) noexcept;
+		Class GetClass(const std::wstring& ClassName, const std::wstring& Name) noexcept;
+		Instance NewInstance(const std::wstring& ClassName) noexcept;
+		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
 
 		friend Session NewSession();
 		friend Session NewSession(const std::wstring ComputerName);
 		friend Session NewSession(const SessionOptions& Options);
 		friend Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
-		friend Session GetDefaultSession() noexcept;
+		friend Session& GetDefaultSession() noexcept;
 	};
+	void swap(Session& lhs, Session& rhs) noexcept;
 	const bool operator==(const Session& lhs, const Session& rhs) noexcept;
 	const bool operator!=(const Session& lhs, const Session& rhs) noexcept;
 
@@ -365,22 +374,46 @@ namespace CIMitar
 		OperationPolymorphismFlags Polymorphism{ OperationPolymorphismFlags::Deep };
 	};
 
+	template <typename T>
+	class CustomOperationOption :public CustomSessionOption<T>
+	{
+	private:
+		OperationFlags flags{};
+	public:
+		CustomOperationOption() noexcept {}
+		CustomOperationOption(std::wstring CustomName, T Value) :CustomSessionOption<T>(CustomName, Value) {}
+		CustomOperationOption(std::wstring CustomName, T Value, OperationFlags Flags) :flags(Flags), CustomSessionOption<T>(CustomName, Value) {}
+		void SetFlags(OperationFlags Flags) { flags = Flags; }
+	};
+
+	template <typename T>
+	class ClientTypedCustomOperationOption : public CustomSessionOption<T>
+	{
+	private:
+		MI_Type cimtype{ MI_Type::MI_BOOLEAN };
+		bool mustcomply{ false };
+	public:
+		ClientTypedCustomOperationOption() {}
+		ClientTypedCustomOperationOption(std::wstring CustomName, T Value, const MI_Type Type) :cimtype(Type), CustomSessionOption<T>(CustomName, Value) {}
+		ClientTypedCustomOperationOption(std::wstring CustomName, T Value, const MI_Type Type, const bool MustComply) :cimtype(Type), mustcomply(MustComply), CustomSessionOption<T>(CustomName, Value) {}
+	};
+
 	class OperationOptions
 	{
 	private:
 		std::set<const void*> overriddenoptions;
 	public:
-		InnateSessionOption<bool> WarningMessageChannel{ overriddenoptions };
-		InnateSessionOption<bool> VerboseMessageChannel{ overriddenoptions };
-		InnateSessionOption<bool> DebugMessageChannel{ overriddenoptions };
-		InnateSessionOption<CallbackModes> PromptUserMode{ overriddenoptions };
-		InnateSessionOption<CallbackModes> PromptUserRegularMode{ overriddenoptions };
-		InnateSessionOption<CallbackModes> WriteErrorMode{ overriddenoptions };
-		InnateSessionOption<bool> Force32Bit{ overriddenoptions };
-		InnateSessionOption<std::wstring> ResourceURI{ overriddenoptions };
-		InnateSessionOption<std::wstring> ResourceURIPrefix{ overriddenoptions };
-		InnateSessionOption<Interval> Timeout{ overriddenoptions };
-		InnateSessionOption<bool> ProvideMachineID{ overriddenoptions };
+		ListedOption<bool> EnableWarningMessageChannel{ overriddenoptions };
+		ListedOption<bool> EnableVerboseMessageChannel{ overriddenoptions };
+		ListedOption<bool> EnableDebugMessageChannel{ overriddenoptions };
+		ListedOption<bool> PromptUserMode{ overriddenoptions };
+		ListedOption<std::pair<bool, bool>> PromptUserRegularMode{ overriddenoptions };
+		ListedOption<bool> PromptClientOnError{ overriddenoptions };
+		ListedOption<std::pair<bool, bool>> Force32Bit{ overriddenoptions };
+		ListedOption<std::wstring> ResourceURI{ overriddenoptions };
+		ListedOption<std::wstring> ResourceURIPrefix{ overriddenoptions };
+		ListedOption<Interval> Timeout{ overriddenoptions };
+		ListedOption<bool> ProvideMachineID{ overriddenoptions };
 	};
 
 	enum class CIMType
@@ -851,45 +884,46 @@ namespace CIMitar
 
 	class Instance
 	{
+	private:
+		std::unique_ptr<MI_Instance> ciminstance;
+		Instance(MI_Instance*) noexcept;
+		friend class Session;
 	public:
 		std::wstring ServerName{};
 		std::wstring Namespace{};
 		std::list<PropertyDeclaration> Properties{};
+		const bool Refresh() noexcept;
 	};
 
 	class Class
 	{
 	private:
+		std::unique_ptr<MI_Class> miclass{ nullptr };
 		Class(const MI_Class* SourceClass);
 		Class(MI_ClassDecl* Declaration);
-		std::wstring name{};
-		std::wstring classnamespace{};
-		std::wstring servername{};
-		std::wstring ownerclassname{};
-		unsigned int flags{ 0 };
-		unsigned int hashcode{ 0 };
-		bool empty{ false };
-		bool isstatic{ false };
-		bool isdynamic{ false };
 		friend class Session;
 	public:
-		virtual ~Class() = default;
-		const std::wstring Name() const noexcept { return name; }
-		const std::wstring Namespace() const noexcept { return classnamespace; }
-		const std::wstring ServerName() const noexcept { return servername; }
-		const std::wstring GetOwningClassName() { return ownerclassname; }
-		const bool IsEmpty() const noexcept { return empty; }
-		const bool IsStatic() const noexcept { return isstatic; }
-		const bool IsDynamic() const noexcept { return isdynamic; }
-		const bool IsAssociation() const noexcept { return flags | MI_FLAG_ASSOCIATION; }
-		const bool IsIndication() const noexcept { return flags | MI_FLAG_INDICATION; }
-		const bool IsAbstract() const noexcept { return flags | MI_FLAG_ABSTRACT; }
-		const bool IsTerminal() const noexcept { return flags | MI_FLAG_TERMINAL; }
+		void swap(Class&) noexcept;
+		Class(const Class&) noexcept;
+		Class& operator=(Class) noexcept;
+		virtual ~Class();
+		const std::wstring Name() const noexcept;
+		const std::wstring Namespace() const noexcept;
+		const std::wstring ServerName() const noexcept;
+		const std::wstring OwningClassName() const noexcept;
+		const bool IsEmpty() const noexcept;
+		const bool IsStatic() const noexcept;
+		const bool IsDynamic() const noexcept;
+		const bool IsAssociation() const noexcept;
+		const bool IsIndication() const noexcept;
+		const bool IsAbstract() const noexcept;
+		const bool IsTerminal() const noexcept;
 		// qualifiers
 		// properties
 		// methods
 		// schema
 	};
+	void swap(Class&, Class&) noexcept;
 
 	Session NewSession();
 	Session NewSession(const std::wstring ComputerName);
@@ -900,11 +934,14 @@ namespace CIMitar
 	const std::wstring& GetDefaultNamespace();
 	inline void ResetNamespace() { SetDefaultNamespace(DefaultCIMNamespace); }
 	void SetDefaultSession(Session& NewDefaultSession) noexcept;
-	Session GetDefaultSession() noexcept;
-	Class NewClass(Class& SourceClass);
-	Class NewClass(Instance& SourceInstance);
-	Instance NewInstance(std::wstring& ClassName);
-	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only class; add an overload that accepts properties
+	Session& GetDefaultSession() noexcept;
+	Instance NewInstance(const std::wstring& ClassName) noexcept;
+	Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
+	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only instance; add an overload that accepts properties
+	std::list<Instance> GetInstance(std::wstring ClassName) noexcept;
+	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName) noexcept;
+	std::list<Instance> GetInstance(std::wstring ClassName, std::wstring Query) noexcept;
+	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName, std::wstring Query) noexcept;
 	const bool RemoveInstance(Instance& Instance);
 	const bool RemoveInstance(const std::wstring& Query);
 	const bool RemoveInstance(Session& Session, const std::wstring& Query);
