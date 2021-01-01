@@ -15,6 +15,7 @@ using namespace CIMitar::Formatters;
 using namespace CIMitar::Infrastructure;
 using namespace std::regex_constants;
 
+constexpr wchar_t QueryLanguage[]{ L"WQL" };
 static MI_Application TheCimApplication = MI_APPLICATION_NULL;
 static map<MI_Session*, Session*> Sessions{};
 static mutex SessionListMutex{};
@@ -198,9 +199,15 @@ std::vector<Instance> Session::GetInstanceCore(const std::wstring& Namespace, co
 	std::vector<Instance> Instances{};
 	if (TheSession != nullptr)
 	{
-		InstanceOpPack{ MaximumResults };
-		MI_Session_GetInstance(TheSession.get(), 0, NULL, Namespace.c_str(), )
+		InstanceOpPack Op{ MaximumResults };
+		MI_Session_QueryInstances(TheSession.get(), 0, NULL, Namespace.c_str(), QueryLanguage, L"", NULL, &Op.operation);
+		do
+		{
+			MI_Operation_GetInstance(&Op.operation, &Op.pRetrievedInstance, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
+			Instances.emplace_back(Instance(Op.pRetrievedInstance));
+		} while (Op.More());
 	}
+	return Instances;
 }
 
 Class Session::GetClass(const std::wstring& ClassName) noexcept { return GetClass(GetDefaultNamespace(), ClassName); }
@@ -227,7 +234,7 @@ Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring&
 	InstanceOpPack Op{};
 	Class InstanceClass{ GetClass(ClassName) };
 	MI_Instance* CreatedInstance;
-	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.miclass.get(), &CreatedInstance);
+	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.cimclass.get(), &CreatedInstance);
 }
 
 Session CIMitar::NewSession()

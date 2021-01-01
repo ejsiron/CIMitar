@@ -886,11 +886,12 @@ namespace CIMitar
 	{
 	private:
 		std::unique_ptr<MI_Instance> ciminstance;
-		Instance(MI_Instance*) noexcept;
+		bool onheap{ false };
+		Instance(const MI_Instance*, const bool CreatedOnHeap) noexcept;
 		friend class Session;
 	public:
-		std::wstring ServerName{};
-		std::wstring Namespace{};
+		const std::wstring ServerName() const noexcept;
+		const std::wstring Namespace() const noexcept;
 		std::list<PropertyDeclaration> Properties{};
 		const bool Refresh() noexcept;
 	};
@@ -898,9 +899,9 @@ namespace CIMitar
 	class Class
 	{
 	private:
-		std::unique_ptr<MI_Class> miclass{ nullptr };
-		Class(const MI_Class* SourceClass);
-		Class(MI_ClassDecl* Declaration);
+		std::unique_ptr<MI_Class> cimclass{ nullptr };
+		Class(const MI_Class* SourceClass) noexcept;
+		//Class(MI_ClassDecl* Declaration) noexcept;
 		friend class Session;
 	public:
 		void swap(Class&) noexcept;

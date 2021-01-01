@@ -14,16 +14,19 @@ public:
 	const bool operator()();
 };
 
+template <typename T>
 class BaseOperationPack
 {
-private:
-	MI_OperationCallbacks callbacks = MI_OPERATIONCALLBACKS_NULL;
 public:
+	MI_OperationCallbacks callbacks = MI_OPERATIONCALLBACKS_NULL;
+	OperationFlags* flags;
+	OperationOptions* options;
 	MI_Operation operation = MI_OPERATION_NULL;
 	MI_Result Result{ MI_Result::MI_RESULT_OK };
 	MI_Boolean MoreResults{ MI_TRUE };
 	const MI_Char* pErrorMessage{ nullptr };
 	const MI_Instance* pErrorDetails{ nullptr };
+	const T* pItem{ nullptr };
 	OpWalker More;
 	BaseOperationPack() noexcept :More(OpWalker(&MoreResults)) {};
 	BaseOperationPack(const unsigned int MaximumResults) noexcept :More(OpWalker(&MoreResults, MaximumResults)) {}
@@ -35,17 +38,16 @@ public:
 	void Cancel();
 };
 
-class ClassOpPack : public BaseOperationPack
+class ClassOpPack : public BaseOperationPack<MI_Class>
 {
 public:
 	using BaseOperationPack::BaseOperationPack;
-	const MI_Class* pRetrievedClass{ nullptr };
 };
 
-class InstanceOpPack : public BaseOperationPack
+class InstanceOpPack : public BaseOperationPack<MI_Instance>
 {
+public:
 	using BaseOperationPack::BaseOperationPack;
-	const MI_Instance* pRetrievedInstance{ nullptr };
 };
 
 #endif CIMITAR_OPERATION_H_INCLUDED

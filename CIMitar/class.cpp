@@ -3,28 +3,28 @@
 using namespace CIMitar;
 using namespace std;
 
-Class::Class(const MI_Class* SourceClass)
+Class::Class(const MI_Class* SourceClass) noexcept
 {
 	if (SourceClass != nullptr)
 	{
-		miclass = make_unique<MI_Class>(*SourceClass);
+		cimclass = make_unique<MI_Class>(*SourceClass);
 	}
 }
 
 void Class::swap(Class& CopySource) noexcept
 {
-	miclass.swap(CopySource.miclass);
+	cimclass.swap(CopySource.cimclass);
 }
 
 Class::Class(const Class& CopySource) noexcept
 {
-	if (CopySource.miclass != nullptr)
+	if (CopySource.cimclass != nullptr)
 	{
 		MI_Class* pClonedClass;
-		MI_Class_Clone(CopySource.miclass.get(), &pClonedClass);
+		MI_Class_Clone(CopySource.cimclass.get(), &pClonedClass);
 		if (pClonedClass != nullptr)
 		{
-			miclass = make_unique<MI_Class>(*pClonedClass);
+			cimclass = make_unique<MI_Class>(*pClonedClass);
 		}
 	}
 }
@@ -40,63 +40,63 @@ Class& Class::operator=(Class CopySource) noexcept
 
 const std::wstring Class::Name() const noexcept
 {
-	return IsEmpty() ? wstring{} : miclass->classDecl->name;
+	return IsEmpty() ? wstring{} : cimclass->classDecl->name;
 }
 
 const std::wstring Class::Namespace() const noexcept
 {
-	return IsEmpty() ? wstring{} : miclass->namespaceName;
+	return IsEmpty() ? wstring{} : cimclass->namespaceName;
 }
 
 const std::wstring Class::ServerName() const noexcept
 {
-	return IsEmpty() ? wstring{} : miclass->serverName;
+	return IsEmpty() ? wstring{} : cimclass->serverName;
 }
 
 const std::wstring Class::OwningClassName() const noexcept
 {
-	return IsEmpty() || IsStatic() || IsDynamic() ? wstring{} : miclass->classDecl->owningClass->classDecl->name;
+	return IsEmpty() || IsStatic() || IsDynamic() ? wstring{} : cimclass->classDecl->owningClass->classDecl->name;
 }
 
 const bool Class::IsEmpty() const noexcept
 {
-	return miclass == nullptr;
+	return cimclass == nullptr;
 }
 
 const bool Class::IsStatic() const noexcept
 {
-	return miclass->classDecl->owningClass == NULL;
+	return cimclass->classDecl->owningClass == NULL;
 }
 
 const bool Class::IsDynamic() const noexcept
 {
-	return reinterpret_cast<int>(miclass->classDecl->owningClass) == -1;
+	return reinterpret_cast<int>(cimclass->classDecl->owningClass) == -1;
 }
 
 const bool Class::IsAssociation() const noexcept
 {
-	return miclass->classDecl->flags | MI_FLAG_ASSOCIATION;
+	return cimclass->classDecl->flags | MI_FLAG_ASSOCIATION;
 }
 
 const bool Class::IsIndication() const noexcept
 {
-	return miclass->classDecl->flags | MI_FLAG_INDICATION;
+	return cimclass->classDecl->flags | MI_FLAG_INDICATION;
 }
 
 const bool Class::IsAbstract() const noexcept
 {
-	return miclass->classDecl->flags | MI_FLAG_ABSTRACT;
+	return cimclass->classDecl->flags | MI_FLAG_ABSTRACT;
 }
 
 const bool Class::IsTerminal() const noexcept
 {
-	return miclass->classDecl->flags | MI_FLAG_TERMINAL;
+	return cimclass->classDecl->flags | MI_FLAG_TERMINAL;
 }
 
 Class::~Class()
 {
 	if (!IsEmpty())
 	{
-		MI_Class_Delete(miclass.get());
+		MI_Class_Delete(cimclass.get());
 	}
 }
