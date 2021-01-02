@@ -178,64 +178,48 @@ unique_ptr<MI_Class, void(*)(MI_Class*)> CloneClass(const MI_Class* SourceClass)
 	return unique_ptr<MI_Class, void(*)(MI_Class*)>(pClonedClass, MI_Class_Deleter);
 }
 
-vector<Class> Session::GetClassCore(const wstring& Namespace, const wstring ClassName, const unsigned int MaximumResults) noexcept
-{
-	std::vector<Class> Classes{};
-	if (TheSession != nullptr)
-	{
-		ClassOpPack Op{ MaximumResults };
-		MI_Session_GetClass(TheSession.get(), 0, NULL, Namespace.c_str(), ClassName.c_str(), NULL, &Op.operation);
-		do
-		{
-			MI_Operation_GetClass(&Op.operation, &Op.pRetrievedClass, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
-			Classes.emplace_back(Class(Op.pRetrievedClass));
-		} while (Op.More());
-	}
-	return Classes;
-}
-
-std::vector<Instance> Session::GetInstanceCore(const std::wstring& Namespace, const std::wstring ClassName, const unsigned int MaximumResults) noexcept
-{
-	std::vector<Instance> Instances{};
-	if (TheSession != nullptr)
-	{
-		InstanceOpPack Op{ MaximumResults };
-		MI_Session_QueryInstances(TheSession.get(), 0, NULL, Namespace.c_str(), QueryLanguage, L"", NULL, &Op.operation);
-		do
-		{
-			MI_Operation_GetInstance(&Op.operation, &Op.pRetrievedInstance, &Op.MoreResults, &Op.Result, &Op.pErrorMessage, &Op.pErrorDetails);
-			Instances.emplace_back(Instance(Op.pRetrievedInstance));
-		} while (Op.More());
-	}
-	return Instances;
-}
-
 Class Session::GetClass(const std::wstring& ClassName) noexcept { return GetClass(GetDefaultNamespace(), ClassName); }
 Class Session::GetClass(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
 {
-	std::vector<Class> RetrievedClasses{ GetClassCore(Namespace, ClassName, 1) };
-	if (RetrievedClasses.empty())
+	vector<Class> FoundClasses{ CIMitar::GetClass(TheSession.get(), Namespace, ClassName, nullptr, nullptr, nullptr) };
+	if (FoundClasses.empty())
 	{
 		return Class{ static_cast<const MI_Class*>(nullptr) };
 	}
 	else
 	{
-		return RetrievedClasses[0];
+		return FoundClasses[0];
 	}
 }
 
-Instance Session::NewInstance(const std::wstring& ClassName) noexcept
+vector<Class> Session::GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept
 {
-	return NewInstance(GetDefaultNamespace(), ClassName);
+	return GetClasses(Namespace, L"", NameOnly);
 }
 
-Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
+vector<Class> Session::GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept
 {
-	InstanceOpPack Op{};
-	Class InstanceClass{ GetClass(ClassName) };
-	MI_Instance* CreatedInstance;
-	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.cimclass.get(), &CreatedInstance);
+	return EnumerateClasses(TheSession.get(), Namespace, SourceClassName, NameOnly, nullptr, nullptr, nullptr);
 }
+
+vector<Class> Session::GetClasses(const Class& SourceClass, const bool NameOnly) noexcept
+{
+	return EnumerateClasses(TheSession.get(), SourceClass.Namespace(), SourceClass.Name(), NameOnly, nullptr, nullptr, nullptr);
+}
+
+//
+//Instance Session::NewInstance(const std::wstring& ClassName) noexcept
+//{
+//	return NewInstance(GetDefaultNamespace(), ClassName);
+//}
+
+//Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
+//{
+//	InstanceOpPack Op{};
+//	Class InstanceClass{ GetClass(ClassName) };
+//	MI_Instance* CreatedInstance;
+//	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.cimclass.get(), &CreatedInstance);
+//}
 
 Session CIMitar::NewSession()
 {

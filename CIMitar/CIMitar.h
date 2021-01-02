@@ -309,8 +309,6 @@ namespace CIMitar
 		std::wstring ComputerName;
 		std::vector<MI_Result> ApplyCustomOptions(std::variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept;
 		const bool Connect(const SessionProtocols* Protocol);
-		std::vector<Class> GetClassCore(const std::wstring& Namespace, const std::wstring ClassName, const unsigned int MaximumResults) noexcept;
-		std::vector<Instance> GetInstanceCore(const std::wstring& Namespace, const std::wstring ClassName, const unsigned int MaximumResults) noexcept;
 		Session();
 
 	public:
@@ -327,6 +325,9 @@ namespace CIMitar
 		const bool Close();
 		Class GetClass(const std::wstring& Name) noexcept;
 		Class GetClass(const std::wstring& ClassName, const std::wstring& Name) noexcept;
+		std::vector<Class> GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept;
+		std::vector<Class> GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept;
+		std::vector<Class> GetClasses(const Class& SourceClass, const bool NameOnly = false) noexcept;
 		Instance NewInstance(const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
 
@@ -890,6 +891,7 @@ namespace CIMitar
 		Instance(const MI_Instance*, const bool CreatedOnHeap) noexcept;
 		friend class Session;
 	public:
+		virtual ~Instance();
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
 		std::list<PropertyDeclaration> Properties{};
@@ -900,10 +902,10 @@ namespace CIMitar
 	{
 	private:
 		std::unique_ptr<MI_Class> cimclass{ nullptr };
-		Class(const MI_Class* SourceClass) noexcept;
 		//Class(MI_ClassDecl* Declaration) noexcept;
 		friend class Session;
 	public:
+		Class(const MI_Class* SourceClass) noexcept;
 		void swap(Class&) noexcept;
 		Class(const Class&) noexcept;
 		Class& operator=(Class) noexcept;

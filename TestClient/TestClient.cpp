@@ -3,23 +3,14 @@
 
 #include <iostream>
 #include "..\CIMitar\CIMitar.h"
+using namespace std;
 
 int main()
 {
 	CIMitar::Session sess{ CIMitar::NewSession() };
-	//CIMitar::Session sess2{CIMitar::NewSession(L"svhv2")};
-	CIMitar::Session sess2{ CIMitar::NewSession(L"LtEsbp2.SIRONIC.LIFE") };
-	std::wcout << sess.Connect() << std::endl;
+	wcout << sess.Connect() << std::endl;
 	auto x = sess.GetClass(L"Win32_Service");
-	std::wcout << L"Class name: " << x.Name() << std::endl;
-	std::wcout << L"Class server name: " << x.ServerName() << std::endl;
-	std::wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
-	std::wcout << sess2.Connect() << std::endl;
-	x = sess2.GetClass(L"Win32_Service");
-	std::wcout << L"Class name: " << x.Name() << std::endl;
-	std::wcout << L"Class server name: " << x.ServerName() << std::endl;
-	std::wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
-	sess.Close();
-	//sess2.Close();
-	std::cout << "Hello World!\n";
+	wcout << L"Class name: " << x.Name() << std::endl;
+	wcout << L"Class server name: " << x.ServerName() << std::endl;
+	wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
 }
