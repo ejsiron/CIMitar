@@ -8,9 +8,10 @@ using namespace std;
 int main()
 {
 	CIMitar::Session sess{ CIMitar::NewSession() };
-	wcout << sess.Connect() << std::endl;
+	sess.Connect();
 	auto x = sess.GetClass(L"Win32_Service");
 	wcout << L"Class name: " << x.Name() << std::endl;
 	wcout << L"Class server name: " << x.ServerName() << std::endl;
 	wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
+	sess.TestConnection();
 }

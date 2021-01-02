@@ -166,16 +166,9 @@ const bool CIMitar::operator!=(const Session& lhs, const Session& rhs) noexcept
 }
 #pragma endregion
 
-void MI_Class_Deleter(MI_Class* DoomedClass)
+const bool Session::TestConnection() noexcept
 {
-	MI_Class_Delete(DoomedClass);
-}
-
-unique_ptr<MI_Class, void(*)(MI_Class*)> CloneClass(const MI_Class* SourceClass) noexcept
-{
-	MI_Class* pClonedClass;
-	MI_Class_Clone(SourceClass, &pClonedClass);
-	return unique_ptr<MI_Class, void(*)(MI_Class*)>(pClonedClass, MI_Class_Deleter);
+	return CIMitar::TestConnection(TheSession.get());
 }
 
 Class Session::GetClass(const std::wstring& ClassName) noexcept { return GetClass(GetDefaultNamespace(), ClassName); }
