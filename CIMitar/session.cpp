@@ -108,6 +108,13 @@ Session::~Session()
 	}
 }
 
+const vector<cimitar_exception> Session::LastErrors() noexcept
+{
+	vector<cimitar_exception> tmp{};
+	tmp.swap(lasterrors);
+	return tmp;
+}
+
 const bool Session::Connect(const SessionProtocols* Protocol)
 {
 	Close();

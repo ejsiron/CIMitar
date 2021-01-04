@@ -1,11 +1,52 @@
 #include "CIMitar.h"
+#include "oplist.h"
 
 using namespace CIMitar;
 using namespace std;
 
+using OpCodes = CIMitarOps::OperationCodes;
+
+void ProcessResult(MI_Result Result, vector<cimitar_exception>& ErrorLog, OpCodes OpCode, wstring& OptionName) noexcept
+{
+	if (Result != MI_RESULT_OK)
+	{
+		ErrorLog.emplace_back(cimitar_exception(static_cast<const int>(Result), static_cast<const int>(OpCode), wstring{ L"Applying: " + OptionName }));
+	}
+}
+
+template <typename OptionFunction, typename MIOptionContainer, typename... OptionArgs>
+void ApplyOption(vector<cimitar_exception>& ErrorLog, OpCodes OpCode, wstring OptionName, OptionFunction Function, MIOptionContainer* Options, OptionArgs... Args)
+{
+	MI_Result OptionApplicationResult{ Function(Options, (Args)...) };
+	ProcessResult(OptionApplicationResult, ErrorLog, OpCode, OptionName);
+}
+
 const bool SessionOptions::HasCustomOptions() const noexcept
 {
 	return CustomStringOptions.size() && CustomNumberOptions.size();
+}
+
+void SessionOptions::ApplyOptions(MI_DestinationOptions* Options, std::vector<cimitar_exception>& SessionErrors) noexcept
+{
+	SessionErrors.clear();
+	if (Options != nullptr)
+	{
+		for (auto const& StringOption : CustomStringOptions)
+		{
+			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, StringOption.first, MI_DestinationOptions_SetString, Options, StringOption.first.c_str(), StringOption.second.get().c_str());
+		}
+
+		for (auto const& NumericOption : CustomNumberOptions)
+		{
+			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, NumericOption.first, MI_DestinationOptions_SetNumber, Options, NumericOption.first.c_str(), NumericOption.second.get());
+		}
+
+		for (auto const& TargetCredential : TargetCredentials)
+		{
+			auto CredApplier{ UserCredentials::ApplyCredential };
+			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, L"destination credential", TargetCredential.*CredApplier, Options, )
+		}
+	}
 }
 
 std::vector<MI_Result> Session::ApplyCustomOptions(variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept

@@ -106,7 +106,72 @@ const bool CIMitar::operator!=(UsernamePasswordCreds& lhs, UsernamePasswordCreds
 	return !(lhs == rhs);
 }
 
-volatile const MI_UsernamePasswordCreds UsernamePasswordCreds::operator()() const noexcept
+MI_Result UserCredentials::ApplyCredential(void* TargetOption, CredentialApplicationModes ApplicationMode) noexcept
 {
-	return MI_UsernamePasswordCreds{ domain.c_str(), username.c_str(), password.get() };
+	MI_UserCredentials uc{};
+	switch (authenticationtype)
+	{
+	case AuthenticationTypes::BASIC:
+		uc.authenticationType = MI_AUTH_TYPE_BASIC;
+		break;
+	case AuthenticationTypes::CLIENT_CERTS:
+		uc.authenticationType = MI_AUTH_TYPE_CLIENT_CERTS;
+		break;
+	case AuthenticationTypes::CREDSSP:
+		uc.authenticationType = MI_AUTH_TYPE_CREDSSP;
+		break;
+	case AuthenticationTypes::DIGEST:
+		uc.authenticationType = MI_AUTH_TYPE_DIGEST;
+		break;
+	case AuthenticationTypes::ISSUERCERT:
+		uc.authenticationType = MI_AUTH_TYPE_ISSUER_CERT;
+		break;
+	case AuthenticationTypes::KERBEROS:
+		uc.authenticationType = MI_AUTH_TYPE_KERBEROS;
+		break;
+	case AuthenticationTypes::NEGO_NO_CREDS:
+		uc.authenticationType = MI_AUTH_TYPE_NEGO_NO_CREDS;
+		break;
+	case AuthenticationTypes::NEGO_WITH_CREDS:
+		uc.authenticationType = MI_AUTH_TYPE_NEGO_WITH_CREDS;
+		break;
+	case AuthenticationTypes::NONE:
+		uc.authenticationType = MI_AUTH_TYPE_NONE;
+		break;
+	case AuthenticationTypes::NTLM:
+		uc.authenticationType = MI_AUTH_TYPE_NTLM;
+		break;
+	default:
+		uc.authenticationType = MI_AUTH_TYPE_DEFAULT;
+		break;
+	}
+	try
+	{
+		switch (credentials.index())
+		{
+		case 0:
+			uc.credentials.certificateThumbprint = get<wstring>(credentials).c_str();
+			break;
+		case 1:
+			uc.credentials.usernamePassword.domain = get<UsernamePasswordCreds>(credentials).domain.c_str();
+			uc.credentials.usernamePassword.username = get<UsernamePasswordCreds>(credentials).username.c_str();
+			uc.credentials.usernamePassword.password = get<UsernamePasswordCreds>(credentials).password.get();
+			break;
+		}
+	}
+	catch (...)
+	{
+		// if anything goes wrong, allow the MI API to deal with an empty credential pack
+	}
+	switch (ApplicationMode)
+	{
+	case CredentialApplicationModes::DestinationMode:
+		return MI_DestinationOptions_AddDestinationCredentials(static_cast<MI_DestinationOptions*>(TargetOption), &uc);
+	case CredentialApplicationModes::ProxyMode:
+		return MI_DestinationOptions_AddProxyCredentials(static_cast<MI_DestinationOptions*>(TargetOption), &uc);
+	case CredentialApplicationModes::SubscriptionDeliveryMode:
+		return MI_SubscriptionDeliveryOptions_AddDeliveryCredentials(static_cast<MI_SubscriptionDeliveryOptions*>(TargetOption), &uc);
+	default:
+		return MI_RESULT_INVALID_PARAMETER;
+	}
 }

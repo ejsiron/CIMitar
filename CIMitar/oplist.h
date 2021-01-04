@@ -6,7 +6,7 @@ namespace CIMitar
 	class CIMitarOps
 	{
 	public:
-		enum class OperationCodes
+		enum class OperationCodes :const int
 		{
 			ApplicationInitialization,
 			LocalSystemInitialization,
@@ -23,7 +23,8 @@ namespace CIMitar
 			RetrievingElementValue,
 			SettingElementValue,
 			ApplicationShutdown,
-			ExtendedOperation
+			ExtendedOperation,
+			ApplyingDestinationOption
 		};
 
 		static const wchar_t* GetOperationMessage(OperationCodes OperationCode)
@@ -74,6 +75,9 @@ namespace CIMitar
 				break;
 			case OperationCodes::ApplicationShutdown:
 				return L"Shutting down the application";
+				break;
+			case OperationCodes::ApplyingDestinationOption:
+				return L"Applying a destination session option";
 				break;
 			default:
 				return L"Unknown or unspecified operation";

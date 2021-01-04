@@ -43,8 +43,8 @@ namespace CIMitar
 	private:
 		const std::wstring moreinformation{};
 	public:
-		cimitar_exception(const unsigned int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
-		cimitar_exception(const unsigned int ErrorCode, const int OpCode, const std::wstring& MoreInformation)
+		cimitar_exception(const int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
+		cimitar_exception(const int ErrorCode, const int OpCode, const std::wstring& MoreInformation)
 			:CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode), moreinformation(MoreInformation)
 		{}
 		const int CIMErrorCode{ -1 };
@@ -101,9 +101,8 @@ namespace CIMitar
 		std::wstring domain;
 		std::wstring username;
 		std::unique_ptr<wchar_t[]> password;	// memory securely wiped at destruction, but not protected in-memory
-		friend class WithOptions;
+		friend class UserCredentials;
 	public:
-		//UsernamePasswordCreds() noexcept {}
 		UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
 		UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
 		UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
@@ -111,7 +110,6 @@ namespace CIMitar
 		UsernamePasswordCreds& operator=(const UsernamePasswordCreds& copysource) noexcept;
 		friend const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
 		~UsernamePasswordCreds();
-		volatile const MI_UsernamePasswordCreds operator()() const noexcept;
 	};
 
 	// only compares domain & username to reduce password leaks
@@ -133,43 +131,24 @@ namespace CIMitar
 		ISSUERCERT
 	};
 
+	enum class CredentialApplicationModes
+	{
+		DestinationMode,
+		ProxyMode,
+		SubscriptionDeliveryMode
+	};
+
 	class UserCredentials
 	{
 	private:
 		AuthenticationTypes authenticationtype{ AuthenticationTypes::DEFAULT };
 		std::variant<std::wstring, UsernamePasswordCreds> credentials;
-		friend class WithOptions;
 	public:
 		UserCredentials(MI_UserCredentials* Credentials) noexcept;
 		UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(std::move(UsernamePasswordCreds(Credentials))) {}
 		UserCredentials(const std::wstring& CertificateThumbprint) noexcept : credentials(CertificateThumbprint) {}
 		UserCredentials(const UsernamePasswordCreds& Credentials) noexcept :credentials(Credentials) {}
-	};
-
-	class Error
-	{
-	private:
-		unsigned int CimErrorCode = 0;
-		// todo: add Operation tracking
-	public:
-		const unsigned int Code() const noexcept { return CimErrorCode; }
-		void Code(const unsigned int Code) noexcept { CimErrorCode = Code; }
-		const wchar_t* Message() const noexcept;
-		static const wchar_t* FindMessage(const unsigned int Code) noexcept;
-	};
-
-	using ErrorStack = std::vector<Error>;
-
-	class CimBase
-	{
-	private:
-		Error LastError{};
-	protected:
-		ErrorStack Errors{};
-		inline void SetError(const unsigned int Code) { LastError.Code(Code); }
-	public:
-		const Error& GetLastError() { return LastError; }
-		virtual ~CimBase() = default;
+		MI_Result ApplyCredential(void* TargetOption, CredentialApplicationModes ApplicationMode) noexcept;
 	};
 
 	enum class SessionProtocols { DCOM, WSMAN };
@@ -181,8 +160,6 @@ namespace CIMitar
 	template <typename T>
 	class Option
 	{
-	private:
-		friend class WithOptions;
 	protected:
 		T value;
 #pragma warning(push)
@@ -191,7 +168,7 @@ namespace CIMitar
 #pragma warning(pop)
 		Option(T Value) noexcept :value(Value) {}
 	public:
-		T& get() noexcept { return value; }
+		const T& get() const noexcept { return value; }
 		virtual void Set(T Value) { value = Value; }
 		void operator=(T& Value) { Set(Value); }
 	};
@@ -238,7 +215,6 @@ namespace CIMitar
 	{
 	private:
 		std::wstring customname{};
-		friend class WithOptions;
 	public:
 		CustomSessionOption() noexcept {}
 		CustomSessionOption(std::wstring CustomName, T Value) :customname(CustomName), Option<T>(Value) {}
@@ -254,6 +230,7 @@ namespace CIMitar
 		std::vector<UserCredentials> TargetCredentials{};
 		std::vector<UserCredentials> ProxyCredentials{};
 		const bool HasCustomOptions() const noexcept;
+		void ApplyOptions(MI_DestinationOptions* Options, std::vector<cimitar_exception>& SessionErrors) noexcept;
 		friend class Session;
 	public:
 		SessionOptions() noexcept {}
@@ -310,7 +287,7 @@ namespace CIMitar
 		std::vector<MI_Result> ApplyCustomOptions(std::variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept;
 		const bool Connect(const SessionProtocols* Protocol);
 		Session();
-
+		std::vector<cimitar_exception> lasterrors{};
 	public:
 		void swap(Session& SwapSource) noexcept;
 		Session(const Session&) noexcept;
@@ -320,6 +297,7 @@ namespace CIMitar
 		virtual ~Session();
 		static Session NullSession;
 		SessionOptions Options{};
+		const std::vector<cimitar_exception> LastErrors() noexcept;
 		const bool Connect();
 		const bool Connect(const SessionProtocols Protocol);
 		const bool Close();
