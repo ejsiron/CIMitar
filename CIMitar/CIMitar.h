@@ -31,28 +31,71 @@
 namespace CIMitar
 {
 	constexpr wchar_t DefaultCIMNamespace[] = { L"root/CIMv2" };
+
+	namespace Activity
+	{
+		// provides error message context
+		enum class Codes :size_t
+		{
+			Unknown,
+			ApplicationInitialization,
+			LocalSystemInitialization,
+			LoadingApplicationInstance,
+			Connecting,
+			TestingConnection,
+			Disconnecting,
+			VerifyingNamespace,
+			RetrievingInstanceFromOp,
+			CompletingOperation,
+			LoadingCIMReferenceClass,
+			CloningCIMClass,
+			CloningCIMInstance,
+			RetrievingElementValue,
+			SettingElementValue,
+			ApplicationShutdown,
+			ExtendedOperation,
+			ApplyingDestinationOption
+		};
+		const std::wstring GetActivity(const Codes Code) noexcept;
+	}
+
+	class ExtendedError
+	{
+	private:
+		unsigned int ErrorType{ 0 };
+		std::wstring OtherErrorType{};
+		std::wstring OwningEntity{};
+		std::wstring MessageID{};
+		std::wstring Message{};
+		std::vector<std::wstring> MessageArguments{};
+		unsigned int PerceivedSeverity{ 0 };
+		unsigned int ProbableCause{ 0 };
+		std::wstring ProbableCauseDescription{};
+		std::vector<std::wstring> RecommendedActions{};
+		std::wstring ErrorSource{};
+		unsigned int ErrorSourceFormat = { 0 };
+		std::wstring OtherErrorSourceFormat{};
+		friend class Error;
+	};
+
+	class Error
+	{
+		unsigned int CIMStatusCode{ 0 };
+		std::wstring CIMStatusCodeDescription{};
+	};
+
+	Error ErrorFactory(unsigned int CIMStatusCode, Activity::Codes ActivityCode);
+	Error ErrorFactory(MI_Instance* ExtendedError, Activity::Codes ActivityCode);
+	std::wstring GetNonLocalizedErrorMessage(unsigned int CIMStatusCode) noexcept;
+	std::wstring GetErrorMessage(const Error& InError) noexcept;
+
+	using ErrorStack = std::vector<Error>;
+
 	enum class CallbackModes
 	{
 		Report,
 		Inquire,
 		Ignore
-	};
-
-	class cimitar_exception
-	{
-	private:
-		const std::wstring moreinformation{};
-	public:
-		cimitar_exception(const int ErrorCode, const int OpCode) :CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode) {}
-		cimitar_exception(const int ErrorCode, const int OpCode, const std::wstring& MoreInformation)
-			:CIMErrorCode(ErrorCode), CIMitarOperationCode(OpCode), moreinformation(MoreInformation)
-		{}
-		const int CIMErrorCode{ -1 };
-		const int CIMitarOperationCode{ -1 };
-		const wchar_t* Message() const noexcept;
-		const wchar_t* Operation() const noexcept;
-		const wchar_t* what() const noexcept { return Message(); }
-		const std::wstring& MoreInformation() const noexcept { return moreinformation; }
 	};
 
 	class Interval
@@ -230,7 +273,7 @@ namespace CIMitar
 		std::vector<UserCredentials> TargetCredentials{};
 		std::vector<UserCredentials> ProxyCredentials{};
 		const bool HasCustomOptions() const noexcept;
-		void ApplyOptions(MI_DestinationOptions* Options, std::vector<cimitar_exception>& SessionErrors) noexcept;
+		void ApplyOptions(MI_DestinationOptions* Options, ErrorStack& SessionErrors) noexcept;
 		friend class Session;
 	public:
 		SessionOptions() noexcept {}
@@ -287,7 +330,7 @@ namespace CIMitar
 		std::vector<MI_Result> ApplyCustomOptions(std::variant<MI_OperationOptions*, MI_DestinationOptions*> OptionPack) noexcept;
 		const bool Connect(const SessionProtocols* Protocol);
 		Session();
-		std::vector<cimitar_exception> lasterrors{};
+		ErrorStack lasterrors{};
 	public:
 		void swap(Session& SwapSource) noexcept;
 		Session(const Session&) noexcept;
@@ -297,7 +340,7 @@ namespace CIMitar
 		virtual ~Session();
 		static Session NullSession;
 		SessionOptions Options{};
-		const std::vector<cimitar_exception> LastErrors() noexcept;
+		ErrorStack LastErrors() noexcept;
 		const bool Connect();
 		const bool Connect(const SessionProtocols Protocol);
 		const bool Close();
@@ -309,6 +352,7 @@ namespace CIMitar
 		std::vector<Class> GetClasses(const Class& SourceClass, const bool NameOnly = false) noexcept;
 		Instance NewInstance(const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
+		Instance NewInstance(const Instance& SourceInstance) noexcept;
 
 		friend Session NewSession();
 		friend Session NewSession(const std::wstring ComputerName);

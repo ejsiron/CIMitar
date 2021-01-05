@@ -115,9 +115,17 @@ vector<Instance> CIMitar::GetAssociatedInstance(MI_Session* TheSession, const ws
 		ResultRole.c_str(), KeysOnly, callbacks);
 }
 
-vector<Instance> CIMitar::CreateInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+Instance CIMitar::CreateInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
-	return GetInstance(TheSession, MI_Session_CreateInstance, 0, nullptr, Namespace.c_str(), SourceInstance, nullptr);
+	auto CreatedInstance{ GetInstance(TheSession, MI_Session_CreateInstance, 0, nullptr, Namespace.size() ? Namespace.c_str() : DefaultCIMNamespace, SourceInstance, nullptr) };
+	//if (CreatedInstance.size())
+	//{
+	return CreatedInstance[0];
+	//}
+	//else
+	//{
+	//	return;
+	//}
 }
 
 vector<Instance> CIMitar::DeleteInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept

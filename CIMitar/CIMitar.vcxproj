@@ -161,11 +161,11 @@
     <ClInclude Include="localaddresses.h" />
     <ClInclude Include="operation.h" />
     <ClInclude Include="stringformatters.h" />
-    <ClInclude Include="oplist.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="value.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="activity.cpp" />
     <ClCompile Include="appinit.cpp" />
     <ClCompile Include="cimtype.cpp" />
     <ClCompile Include="class.cpp" />

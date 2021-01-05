@@ -207,19 +207,23 @@ vector<Class> Session::GetClasses(const Class& SourceClass, const bool NameOnly)
 	return EnumerateClasses(TheSession.get(), SourceClass.Namespace(), SourceClass.Name(), NameOnly, nullptr, nullptr, nullptr);
 }
 
-//
-//Instance Session::NewInstance(const std::wstring& ClassName) noexcept
-//{
-//	return NewInstance(GetDefaultNamespace(), ClassName);
-//}
+Instance Session::NewInstance(const std::wstring& ClassName) noexcept
+{
+	return NewInstance(GetDefaultNamespace(), ClassName);
+}
 
-//Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
-//{
-//	InstanceOpPack Op{};
-//	Class InstanceClass{ GetClass(ClassName) };
-//	MI_Instance* CreatedInstance;
-//	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.cimclass.get(), &CreatedInstance);
-//}
+Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
+{
+	Class InstanceClass{ GetClass(Namespace, ClassName) };
+	MI_Instance* CreatedInstance;
+	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.cimclass.get(), &CreatedInstance);
+	return Instance(CreatedInstance);
+}
+
+Instance Session::NewInstance(const Instance& SourceInstance) noexcept
+{
+	return CreateInstance(TheSession.get(), SourceInstance.Namespace(), SourceInstance.ciminstance.get(), nullptr, nullptr, nullptr);
+}
 
 Session CIMitar::NewSession()
 {

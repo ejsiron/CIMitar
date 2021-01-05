@@ -47,12 +47,12 @@ void Instance::swap(Instance& CopySource) noexcept
 
 const std::wstring Instance::ServerName() const noexcept
 {
-	return ciminstance->serverName;
+	return ciminstance->serverName ? ciminstance->serverName : L"";
 }
 
 const std::wstring Instance::Namespace() const noexcept
 {
-	return ciminstance->nameSpace;
+	return ciminstance->nameSpace ? ciminstance->nameSpace : L"";
 }
 
 unsigned int Instance::ElementCount() noexcept

@@ -1,21 +1,20 @@
 #include "CIMitar.h"
-#include "oplist.h"
 
 using namespace CIMitar;
 using namespace std;
 
-using OpCodes = CIMitarOps::OperationCodes;
+using OpCodes = CIMitar::Activity::Codes;
 
-void ProcessResult(MI_Result Result, vector<cimitar_exception>& ErrorLog, OpCodes OpCode, wstring& OptionName) noexcept
+void ProcessResult(MI_Result Result, ErrorStack& ErrorLog, OpCodes OpCode, wstring& OptionName) noexcept
 {
 	if (Result != MI_RESULT_OK)
 	{
-		ErrorLog.emplace_back(cimitar_exception(static_cast<const int>(Result), static_cast<const int>(OpCode), wstring{ L"Applying: " + OptionName }));
+		ErrorLog.emplace_back(Error(static_cast<const unsigned int>(Result), static_cast<const int>(OpCode), wstring{ L"Applying: " + OptionName }));
 	}
 }
 
 template <typename OptionFunction, typename MIOptionContainer, typename... OptionArgs>
-void ApplyOption(vector<cimitar_exception>& ErrorLog, OpCodes OpCode, wstring OptionName, OptionFunction Function, MIOptionContainer* Options, OptionArgs... Args)
+void ApplyOption(ErrorStack& ErrorLog, OpCodes OpCode, wstring OptionName, OptionFunction Function, MIOptionContainer* Options, OptionArgs... Args)
 {
 	MI_Result OptionApplicationResult{ Function(Options, (Args)...) };
 	ProcessResult(OptionApplicationResult, ErrorLog, OpCode, OptionName);
@@ -26,7 +25,7 @@ const bool SessionOptions::HasCustomOptions() const noexcept
 	return CustomStringOptions.size() && CustomNumberOptions.size();
 }
 
-void SessionOptions::ApplyOptions(MI_DestinationOptions* Options, std::vector<cimitar_exception>& SessionErrors) noexcept
+void SessionOptions::ApplyOptions(MI_DestinationOptions* Options, ErrorStack& SessionErrors) noexcept
 {
 	SessionErrors.clear();
 	if (Options != nullptr)
@@ -41,11 +40,11 @@ void SessionOptions::ApplyOptions(MI_DestinationOptions* Options, std::vector<ci
 			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, NumericOption.first, MI_DestinationOptions_SetNumber, Options, NumericOption.first.c_str(), NumericOption.second.get());
 		}
 
-		for (auto const& TargetCredential : TargetCredentials)
-		{
-			auto CredApplier{ UserCredentials::ApplyCredential };
-			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, L"destination credential", TargetCredential.*CredApplier, Options, )
-		}
+		//for (auto const& TargetCredential : TargetCredentials)
+		//{
+		//	auto CredApplier{ UserCredentials::ApplyCredential };
+		//	ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, L"destination credential", TargetCredential.*CredApplier, Options, )
+		//}
 	}
 }
 
