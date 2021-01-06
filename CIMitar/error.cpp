@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CIMitar.h"
+#include "utility.h"
 #include <array>
 
 using namespace CIMitar;
@@ -37,11 +38,94 @@ static constexpr array ErrorMessages =
 	L"Operation failed because CIM server is shutting down."
 };
 
-wstring GetNonLocalizedErrorMessage(unsigned int CIMStatusCode) noexcept
+const unsigned int Error::CIMStatusCode() const noexcept
 {
-	if (CIMStatusCode < 0 || CIMStatusCode >= ErrorMessages.size())
-	{	// tiny bit risky, but "1" has meant "unspecified error" forever
-		CIMStatusCode = 1;
+	return cimstatuscode;
+}
+
+const wstring Error::CIMStatusCodeDescription() const noexcept
+{
+	if (cimstatuscodedescription.size())
+	{
+		return cimstatuscodedescription;
 	}
-	return ErrorMessages.at(CIMStatusCode);
+	else
+	{
+		size_t TranslatedCode{ static_cast<size_t>(cimstatuscode) };
+		if (TranslatedCode >= ErrorMessages.size())
+		{	// 1 is the CIM code for unknown/unspecified error
+			TranslatedCode = 1;
+		}
+		return ErrorMessages[static_cast<size_t> (cimstatuscode)];
+	}
+}
+
+const wstring Error::Activity() const noexcept
+{
+	return Activity::GetActivity(activitycode);
+}
+
+const wstring Error::Query() const noexcept
+{
+	return query;
+}
+
+const wstring Error::OtherErrorType() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::OtherErrorType);
+}
+
+const wstring Error::OwningEntity() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::OwningEntity);
+}
+
+const wstring Error::MessageID() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::MessageID);
+}
+
+const wstring Error::Message() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::Message);
+}
+
+const vector<wstring> Error::MessageArguments() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::MessageArguments);
+}
+
+const unsigned int Error::PerceivedSeverity() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::PerceivedSeverity);
+}
+
+const unsigned int Error::ProbableCause() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::ProbableCause);
+}
+
+const wstring Error::ProbableCauseDescription() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::ProbableCauseDescription);
+}
+
+const vector<wstring> Error::RecommendedActions() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::RecommendedActions);
+}
+
+const wstring Error::ErrorSource() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::ErrorSource);
+}
+
+const unsigned int Error::ErrorSourceFormat() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::ErrorSourceFormat);
+}
+
+const wstring Error::OtherErrorSourceFormat() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::OtherErrorSourceFormat);
 }

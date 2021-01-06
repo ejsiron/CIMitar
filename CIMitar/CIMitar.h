@@ -32,6 +32,7 @@ namespace CIMitar
 {
 	constexpr wchar_t DefaultCIMNamespace[] = { L"root/CIMv2" };
 
+#pragma region Error Handling
 	namespace Activity
 	{
 		// provides error message context
@@ -80,16 +81,59 @@ namespace CIMitar
 
 	class Error
 	{
-		unsigned int CIMStatusCode{ 0 };
-		std::wstring CIMStatusCodeDescription{};
+	private:
+		unsigned int cimstatuscode{ 0 };
+		std::wstring cimstatuscodedescription{};
+		Activity::Codes activitycode{ Activity::Codes::Unknown };
+		std::wstring query{};
+		std::unique_ptr<ExtendedError> extendederror{ nullptr };
+	public:
+		Error(unsigned int CIMStatusCode, Activity::Codes ActivityCode) noexcept;
+		Error(MI_Instance* ExtendedError, Activity::Codes ActivityCode) noexcept;
+		Error(const Error&) noexcept;
+		Error operator=(const Error&) noexcept;
+		const unsigned int CIMStatusCode() const noexcept;
+		const std::wstring CIMStatusCodeDescription() const noexcept;
+		const std::wstring Activity() const noexcept;
+		const std::wstring Query() const noexcept;
+		const std::wstring OtherErrorType() const noexcept;
+		const std::wstring OwningEntity() const noexcept;
+		const std::wstring MessageID() const noexcept;
+		const std::wstring Message() const noexcept;
+		const std::vector<std::wstring> MessageArguments() const noexcept;
+		const unsigned int PerceivedSeverity() const noexcept;
+		const unsigned int ProbableCause() const noexcept;
+		const std::wstring ProbableCauseDescription() const noexcept;
+		const std::vector<std::wstring> RecommendedActions() const noexcept;
+		const std::wstring ErrorSource() const noexcept;
+		const unsigned int ErrorSourceFormat() const noexcept;
+		const std::wstring OtherErrorSourceFormat() const noexcept;
 	};
 
-	Error ErrorFactory(unsigned int CIMStatusCode, Activity::Codes ActivityCode);
-	Error ErrorFactory(MI_Instance* ExtendedError, Activity::Codes ActivityCode);
-	std::wstring GetNonLocalizedErrorMessage(unsigned int CIMStatusCode) noexcept;
-	std::wstring GetErrorMessage(const Error& InError) noexcept;
+	struct ErrorData
+	{
+		unsigned int CIMStatusCode{ 0 };
+		std::wstring CIMStatusCodeDescription{};
+		std::wstring Activity{};
+		std::wstring Query{};
+		unsigned int ErrorType{ 0 };
+		std::wstring OtherErrorType{};
+		std::wstring OwningEntity{};
+		std::wstring MessageID{};
+		std::wstring Message{};
+		std::vector<std::wstring> MessageArguments{};
+		unsigned int PerceivedSeverity{ 0 };
+		unsigned int ProbableCause{ 0 };
+		std::wstring ProbableCauseDescription{};
+		std::vector<std::wstring> RecommendedActions{};
+		std::wstring ErrorSource{};
+		unsigned int ErrorSourceFormat = { 0 };
+		std::wstring OtherErrorSourceFormat{};
+	};
 
+	ErrorData ConvertErrorToPlainData(Error& SourceError) noexcept;
 	using ErrorStack = std::vector<Error>;
+#pragma endregion Error Handling
 
 	enum class CallbackModes
 	{
