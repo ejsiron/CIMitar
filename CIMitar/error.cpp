@@ -38,6 +38,8 @@ static constexpr array ErrorMessages =
 	L"Operation failed because CIM server is shutting down."
 };
 
+Error::Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const wstring& MoreInformation) noexcept : cimstatuscode(CIMStatusCode), activitycode(ActivityCode), moreinformation(MoreInformation) {}
+
 const unsigned int Error::CIMStatusCode() const noexcept
 {
 	return cimstatuscode;
@@ -65,9 +67,9 @@ const wstring Error::Activity() const noexcept
 	return Activity::GetActivity(activitycode);
 }
 
-const wstring Error::Query() const noexcept
+const wstring Error::MoreInformation() const noexcept
 {
-	return query;
+	return moreinformation;
 }
 
 const wstring Error::OtherErrorType() const noexcept

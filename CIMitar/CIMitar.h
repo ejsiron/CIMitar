@@ -85,17 +85,18 @@ namespace CIMitar
 		unsigned int cimstatuscode{ 0 };
 		std::wstring cimstatuscodedescription{};
 		Activity::Codes activitycode{ Activity::Codes::Unknown };
-		std::wstring query{};
+		std::wstring moreinformation{};
+		std::vector <std::variant<std::wstring, unsigned int>> extendederrordata{};
 		std::unique_ptr<ExtendedError> extendederror{ nullptr };
 	public:
-		Error(unsigned int CIMStatusCode, Activity::Codes ActivityCode) noexcept;
-		Error(MI_Instance* ExtendedError, Activity::Codes ActivityCode) noexcept;
+		Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
+		Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
 		Error(const Error&) noexcept;
 		Error operator=(const Error&) noexcept;
 		const unsigned int CIMStatusCode() const noexcept;
 		const std::wstring CIMStatusCodeDescription() const noexcept;
 		const std::wstring Activity() const noexcept;
-		const std::wstring Query() const noexcept;
+		const std::wstring MoreInformation() const noexcept;
 		const std::wstring OtherErrorType() const noexcept;
 		const std::wstring OwningEntity() const noexcept;
 		const std::wstring MessageID() const noexcept;
