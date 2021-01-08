@@ -1,13 +1,15 @@
 #pragma once
+#ifndef CIMITAR_VALUE_H_INCLUDED
+#define CIMITAR_VALUE_H_INCLUDED
 
+#include <string>
+#include <vector>
 #include <mi.h> // caution: earlier versions of mi.h did not have a header guard
 
-// wraps MI_Value
-class Value sealed
+namespace CIMitar
 {
-private:
-public:
-	Value();
-	~Value();
-};
+	const std::wstring Translate(const MI_Char* In) noexcept;
+	const MI_Char* Translate(const std::wstring& In) noexcept;
+}
 
+#endif CIMITAR_VALUE_H_INCLUDED
