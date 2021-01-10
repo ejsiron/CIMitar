@@ -151,8 +151,8 @@ namespace CIMitar
 		unsigned int Minutes{ 0 };
 		unsigned int Seconds{ 0 };
 		unsigned int Microseconds{ 0 };
-		constexpr Interval() noexcept = default;
-		constexpr Interval(MI_Interval* MIInterval) noexcept;
+		Interval() noexcept = default;
+		Interval(MI_Interval* MIInterval) noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
 	};
@@ -171,8 +171,8 @@ namespace CIMitar
 		unsigned int Second{ 0 };
 		unsigned int Microseconds{ 0 };
 		int UTCOffset{ 0 };
-		constexpr Timestamp() noexcept = default;
-		constexpr Timestamp(MI_Timestamp* MITimestamp) noexcept;
+		Timestamp() noexcept = default;
+		Timestamp(MI_Timestamp* MITimestamp) noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
 	};
@@ -522,18 +522,15 @@ namespace CIMitar
 	class Value
 	{
 	private:
-		std::variant<wchar_t, unsigned int, int, unsigned long, long, float, double, DateTime, std::wstring, Instance,
-			std::vector<unsigned char>, std::vector<unsigned int>, std::vector<int>, std::vector<unsigned long>,
-			std::vector<long>, std::vector<float>, std::vector<double>, std::vector<DateTime>,
-			std::vector<std::wstring>, std::vector<Instance>>
+		std::variant<wchar_t, unsigned int, int, unsigned long long, long long, float, double, Interval, Timestamp, std::wstring, Instance,
+			std::vector<wchar_t>, std::vector<unsigned int>, std::vector<int>, std::vector<unsigned long long>,
+			std::vector<long long>, std::vector<float>, std::vector<double>, std::vector<Interval>,
+			std::vector<Timestamp>, std::vector<std::wstring>, std::vector<Instance>>
 			value;
 		CIMTypes cimtype;
 		bool isarray{ false };
 	public:
-		template <typename T>
-		Value(const T&& Value, const CIMTypes Type) { value.emplace(Value); cimtype = Type; }
-		template <typename T>
-		Value(const std::vector<T>&& Value, const CIMTypes Type) { value.emplace(Value); cimtype = Type; isarray = true; }
+		Value(MI_Value& Val, const MI_Type Type) noexcept;
 		const bool Boolean() const noexcept;
 		const std::vector<bool> BooleanA() const noexcept;
 		const wchar_t Char16() const noexcept;

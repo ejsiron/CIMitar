@@ -1,5 +1,5 @@
+#include <map>
 #include <type_traits>
-#include <iostream>
 #include "CIMitar.h"
 #include "value.h"
 
@@ -76,111 +76,46 @@ const CIMTypes CIMTypeIDTranslator(const MI_Type Type) noexcept
 	}
 }
 
-const wstring CIMitar::Translate(const MI_Char* In) noexcept
+Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 {
-	return In == nullptr ? wstring{} : wstring{ In };
+	cimtype = CIMTypeIDTranslator(Type);
+	switch (Type)
+	{
+	case MI_CHAR16:	value = Val.char16; break;
+	case MI_CHAR16A:	value = std::vector<wchar_t>(Val.array.size); break; // TODO <!--
+	case MI_DATETIME:
+		if (Val.datetime.isTimestamp)
+		{
+			value = Timestamp(&Val.datetime.u.timestamp);
+		}
+		else
+		{
+			value = Interval(&Val.datetime.u.interval);
+		}
+		break;
+	case MI_REAL32:	value = Val.real32;	break;
+	case MI_REAL64:	value = Val.real64;	break;
+	case MI_SINT8:		value = Val.sint8;	break;
+	case MI_SINT16:	value = Val.sint16;	break;
+	case MI_SINT32:	value = Val.sint32;	break;
+	case MI_SINT64:	value = Val.sint64;	break;
+	case MI_STRING:	value = Val.string;	break;
+	case MI_UINT8:		value = Val.uint8;	break;
+	case MI_UINT16:	value = Val.uint16;	break;
+	case MI_UINT32:	value = Val.uint32;	break;
+	case MI_UINT64:	value = Val.uint64;	break;
+	default:				value = Val.boolean;	break;
+	}
 }
 
-const MI_Char* CIMitar::Translate(const wstring& In) noexcept
+const Value ToValue(MI_Value& value, MI_Type type)
 {
-	return In.c_str();
+	Value v;
+	if (type == MI_Type::MI_ARRAY)
+	{
+	}
+	switch (type)
+	{
+	case MI_CHAR16:
+	}
 }
-
-template <typename T, typename U>
-static auto FillCIMArray(const U* Val) noexcept
-{
-	MI_Uint32 OutSize{ Val == nullptr ? 0 : Val->size };
-	vector<T> Out(OutSize);
-	for (size_t i = 0; i != Val->size; i++)
-		Out[i] = Val->data[i];
-	return Out;
-}
-//
-//CIMBooleanA::CIMBooleanA(const MI_BooleanA* Val) noexcept : CIMValue(CIMType::BooleanA)
-//{
-//	Value = FillCIMArray<bool, MI_BooleanA>(Val);
-//}
-//
-//CIMChar16A::CIMChar16A(const MI_Char16A* Val) noexcept : CIMValue(CIMType::Char16A)
-//{
-//	Value = FillCIMArray<wchar_t, MI_Char16A>(Val);
-//}
-//
-//CIMIntervalA::CIMIntervalA(const MI_DatetimeA* Val) noexcept : CIMValue(CIMType::IntervalA)
-//{
-//	Value = vector<MI_Interval>(Val->size);
-//	for (size_t i = 0; i != Val->size; i++)
-//	{
-//		Value[i] = Val->data[i].u.interval;
-//	}
-//}
-//
-//CIMReal32A::CIMReal32A(const MI_Real32A* Val) noexcept : CIMValue(CIMType::Real32A)
-//{
-//	Value = FillCIMArray<float, MI_Real32A>(Val);
-//}
-//
-//CIMReal64A::CIMReal64A(const MI_Real64A* Val) noexcept : CIMValue(CIMType::Real64A)
-//{
-//	Value = FillCIMArray<long double>(Val);
-//}
-//
-//CIMSInt8A::CIMSInt8A(const MI_Sint8A* Val) noexcept :CIMValue(CIMType::SInt8A)
-//{
-//	Value = FillCIMArray<int>(Val);
-//}
-//
-//CIMSInt16A::CIMSInt16A(const MI_Sint16A* Val) noexcept :CIMValue(CIMType::SInt16A)
-//{
-//	Value = FillCIMArray<int>(Val);
-//}
-//
-//CIMSInt32A::CIMSInt32A(const MI_Sint32A* Val) noexcept : CIMValue(CIMType::SInt32A)
-//{
-//	Value = FillCIMArray<int>(Val);
-//}
-//
-//CIMSInt64A::CIMSInt64A(const MI_Sint64A* Val) noexcept : CIMValue(CIMType::SInt64A)
-//{
-//	Value = FillCIMArray<long long>(Val);
-//}
-//
-//CIMString::CIMString(const MI_Char* Val) noexcept : CIMValue(CIMType::String)
-//{
-//	Value = Val == nullptr ? wstring(L"") : wstring(Val);
-//}
-//
-//CIMStringA::CIMStringA(const MI_StringA* Val) noexcept : CIMValue(CIMType::String)
-//{
-//	Value = FillCIMArray<wstring>(Val);
-//}
-//
-//CIMTimestampA::CIMTimestampA(const MI_DatetimeA* Val) noexcept : CIMValue(CIMType::TimestampA)
-//{
-//	MI_Uint32 ValSize = Val == nullptr ? 0 : Val->size;
-//	Value = vector<MI_Timestamp>(ValSize);
-//	for (size_t i = 0; i != ValSize; i++)
-//	{
-//		Value[i] = Val->data[i].u.timestamp;
-//	}
-//}
-//
-//CIMUInt8A::CIMUInt8A(const MI_Uint8A* Val) noexcept : CIMValue(CIMType::UInt8)
-//{
-//	Value = FillCIMArray<unsigned int>(Val);
-//}
-//
-//CIMUInt16A::CIMUInt16A(const MI_Uint16A* Val) noexcept : CIMValue(CIMType::UInt16A)
-//{
-//	Value = FillCIMArray<unsigned int>(Val);
-//}
-//
-//CIMUInt32A::CIMUInt32A(const MI_Uint32A* Val) noexcept : CIMValue(CIMType::UInt32A)
-//{
-//	Value = FillCIMArray<unsigned int>(Val);
-//}
-//
-//CIMUInt64A::CIMUInt64A(const MI_Uint64A* Val) noexcept : CIMValue(CIMType::UInt64A)
-//{
-//	Value = FillCIMArray<unsigned long long>(Val);
-//}
