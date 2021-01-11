@@ -523,7 +523,7 @@ namespace CIMitar
 	{
 	private:
 		std::variant<wchar_t, unsigned int, int, unsigned long long, long long, float, double, Interval, Timestamp, std::wstring, Instance,
-			std::vector<wchar_t>, std::vector<unsigned int>, std::vector<int>, std::vector<unsigned long long>,
+			std::vector<bool>, std::vector<wchar_t>, std::vector<unsigned int>, std::vector<int>, std::vector<unsigned long long>,
 			std::vector<long long>, std::vector<float>, std::vector<double>, std::vector<Interval>,
 			std::vector<Timestamp>, std::vector<std::wstring>, std::vector<Instance>>
 			value;
