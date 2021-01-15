@@ -151,25 +151,82 @@ Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 	default:				value = Val.boolean;	break;
 	}
 }
-
-template <typename T>
-class BoolVisitor
+template <typename visitortype>
+class BaseVisitor
 {
-	const bool operator()(T& t, const bool isarray)
+private:
+	virtual const visitortype DefaultValue() const noexcept = 0;
+	virtual const visitortype StringConverter(const wstring&) const noexcept = 0;
+public:
+	const visitortype operator()(const wstring& str)const noexcept { try { return StringConverter(forward<const wstring&>(str)); } catch (...) { return DefaultValue(); } }
+	const visitortype operator()(const wchar_t* str)const noexcept { return str == nullptr ? false : this->operator()(wstring{ str }); }
+	template <class T, typename = enable_if_t<is_trivially_constructible_v<T> && !is_same_v<wchar_t, T>>>
+	const visitortype operator()(T t) const noexcept { return static_cast<bool>(t); }
+	const visitortype operator()(wchar_t ch) const noexcept { return ch != L'0'; }
+	template <class T>
+	const visitortype operator()(vector<T>& t)
 	{
-		if (isarray)
+		return t.size() ? this->operator()(t[0]) : DefaultValue();
+	}
+	template <typename T>
+	static const visitortype UnitTransformer(const T& source) noexcept
+	{
+		return visitortype{}(source);
+	}
+	virtual ~BaseVisitor() = default;
+};
+
+class BoolVisitor :public BaseVisitor<bool>
+{
+private:
+	const bool DefaultValue() const noexcept { return false; }
+	const bool StringConverter(const wstring& str) const noexcept override
+	{
+		try { return str.size() > 0 && stold(str) != 0l; }
+		catch (...)
 		{
-			return t[0];
+			return false;
+		}
+	}
+public:
+	using BaseVisitor::BaseVisitor;
+};
+
+template <typename T, typename UnitConverter>
+class BaseVisitorArray
+{
+private:
+	UnitConverter Transformer{};
+	static vector<T> NewEmpty(const size_t size, const bool autofill = false)
+	{
+		auto ne{ vector<T>() };
+		if (autofill)
+		{
+			ne.resize(size, T{});
 		}
 		else
 		{
-			return t;
+			ne.reserve(size);
 		}
+		return ne;
 	}
+public:
+	template <typename Source>
+	const vector<T> operator()(const vector<Source>& sv) const
+	{
+		auto ov{ vector<T>() };
+		ov.reserve(sv.size());
+		transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
+		return ov;
+	}
+	virtual ~BaseVisitorArray() = default;
+	const vector<T> operator()(const vector<T>& sv) const noexcept { return sv; }
+	template <typename Source>
+	const vector<T> operator()(const Source s) const noexcept { return NewEmpty(1, Transformer(s)); }
 };
 
-const bool Value::Boolean() const noexcept
+class BoolAVisitor :public BaseVisitorArray<bool, BoolVisitor>
 {
-	auto y = 14;
-	auto n = BoolVisitor(y, false);
-}
+public:
+	using BaseVisitorArray::operator();
+};

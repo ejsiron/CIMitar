@@ -365,9 +365,31 @@ namespace CIMitar
 		void ResetAll();
 	};
 
-	// forward declarations for use in class Session
+	//forward declaration for use in class Instance
+	class PropertyDeclaration;
+
+	class Instance
+	{
+	private:
+		std::unique_ptr<MI_Instance> ciminstance{ nullptr };
+		static Instance Clone(const MI_Instance& SourceInstance) noexcept;
+		friend class Session;
+	public:
+		Instance(const Instance&) noexcept;
+		Instance(const MI_Instance*) noexcept;
+		Instance operator=(const Instance&) noexcept;
+		void swap(Instance& CopySource) noexcept;
+		virtual ~Instance();
+		const std::wstring ServerName() const noexcept;
+		const std::wstring Namespace() const noexcept;
+		unsigned int ElementCount() noexcept;
+		std::list<PropertyDeclaration> Properties{};
+		const bool Refresh() noexcept;
+	};
+	void swap(Instance& lhs, Instance& rhs) noexcept;
+
+	// forward declaration for use in class Session
 	class Class;
-	class Instance;
 
 	class Session
 	{
@@ -601,26 +623,6 @@ namespace CIMitar
 		std::wstring PropagatorAncestor{};
 		void* value;
 	};
-
-	class Instance
-	{
-	private:
-		std::unique_ptr<MI_Instance> ciminstance{ nullptr };
-		static Instance Clone(const MI_Instance& SourceInstance) noexcept;
-		friend class Session;
-	public:
-		Instance(const Instance&) noexcept;
-		Instance(const MI_Instance*) noexcept;
-		Instance operator=(const Instance&) noexcept;
-		void swap(Instance& CopySource) noexcept;
-		virtual ~Instance();
-		const std::wstring ServerName() const noexcept;
-		const std::wstring Namespace() const noexcept;
-		unsigned int ElementCount() noexcept;
-		std::list<PropertyDeclaration> Properties{};
-		const bool Refresh() noexcept;
-	};
-	void swap(Instance& lhs, Instance& rhs) noexcept;
 
 	class Class
 	{
