@@ -76,15 +76,21 @@ const CIMTypes CIMTypeIDTranslator(const MI_Type Type) noexcept
 	}
 }
 
-template <typename cpptype, typename MIType>
-vector<cpptype> VectorizeMIArray(MIType* SourceArray, size_t length) noexcept
+template <typename outtype, typename MIType>
+vector<outtype> VectorizeMIArray(const MIType* SourceArray, size_t length) noexcept
 {
-	vector<cpptype> OutVector(length);
+	vector<outtype> OutVector{};
+	OutVector.reserve(length);
 	try
 	{
-		for (auto i{ 0 }; i < length; ++i)
+		for (size_t i{ 0 }; i < length; ++i)
 		{
-			OutVector.emplace_back(SourceArray[i]);
+			if constexpr (is_trivially_constructible_v<outtype, MIType>)
+			{
+				OutVector.emplace_back(SourceArray[i]);
+			}
+			else
+				OutVector.emplace_back(outtype{ SourceArray[i] });
 		}
 	}
 	catch (...) {}
@@ -99,104 +105,140 @@ Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 	// All Vals should come from an MI provider
 	switch (Type)
 	{
-	case MI_BOOLEANA:	value = VectorizeMIArray<bool>(Val.booleana.data, length); break;
-	case MI_CHAR16:	value = Val.char16; break;
-	case MI_CHAR16A:	value = VectorizeMIArray<wchar_t>(Val.char16a.data, length); break;
-	case MI_DATETIME:
-		if (Val.datetime.isTimestamp)
-		{
-			value = Timestamp(&Val.datetime.u.timestamp);
-		}
-		else
-		{
-			value = Interval(&Val.datetime.u.interval);
-		}
-		break;
-	case MI_DATETIMEA:
-		if (length > 0 && Val.datetimea.data->isTimestamp)
-		{
-			VectorizeMIArray <Timestamp>(Val.datetimea.data, length);
-		}
-		else
-		{
-			VectorizeMIArray<Interval>(Val.datetimea.data, length);
-		}
-		break;
-	case MI_INSTANCE:	value = CIMitar::Instance(Val.instance); break;
-	case MI_INSTANCEA:value = VectorizeMIArray<CIMitar::Instance>(&Val.instancea, length); break;
-	case MI_REAL32:	value = Val.real32;	break;
-	case MI_REAL32A:	value = VectorizeMIArray<float>(Val.real32a.data, length); break;
-	case MI_REAL64:	value = Val.real64;	break;
-	case MI_REAL64A:	value = VectorizeMIArray<double>(Val.real64a.data, length); break;
-	case MI_REFERENCE:value = CIMitar::Instance(Val.reference);	break;
-	case MI_REFERENCEA:	value = VectorizeMIArray<CIMitar::Instance>(&Val.referencea, length); break;
-	case MI_SINT8:		value = Val.sint8;	break;
-	case MI_SINT8A:	value = VectorizeMIArray<int>(Val.sint8a.data, length); break;
-	case MI_SINT16:	value = Val.sint16;	break;
-	case MI_SINT16A:	value = VectorizeMIArray<int>(Val.sint16a.data, length); break;
-	case MI_SINT32:	value = Val.sint32;	break;
-	case MI_SINT32A:	value = VectorizeMIArray<int>(Val.sint32a.data, length); break;
-	case MI_SINT64:	value = Val.sint64;	break;
-	case MI_SINT64A:	value = VectorizeMIArray<long long>(Val.sint64a.data, length); break;
-	case MI_STRING:	value = Val.string;	break;
-	case MI_STRINGA:	value = VectorizeMIArray<wstring>(Val.stringa.data, length); break;
-	case MI_UINT8:		value = Val.uint8;	break;
-	case MI_UINT8A:	value = VectorizeMIArray<unsigned int>(Val.uint8a.data, length); break;
-	case MI_UINT16:	value = Val.uint16;	break;
-	case MI_UINT16A:	value = VectorizeMIArray<unsigned int>(Val.uint16a.data, length); break;
-	case MI_UINT32:	value = Val.uint32;	break;
-	case MI_UINT32A:	value = VectorizeMIArray<unsigned int>(Val.uint32a.data, length); break;
-	case MI_UINT64:	value = Val.uint64;	break;
-	case MI_UINT64A:	value = VectorizeMIArray<unsigned long long>(Val.uint64a.data, length); break;
-	default:				value = Val.boolean;	break;
+		//case MI_BOOLEANA:	cimvalue = VectorizeMIArray<bool>(Val.booleana.data, length); break;
+	case MI_CHAR16:	cimvalue = static_cast<wchar_t>(Val.char16); break;
+		//case MI_CHAR16A:	cimvalue = VectorizeMIArray<wchar_t>(Val.char16a.data, length); break;
+		//case MI_DATETIME:
+		//	if (Val.datetime.isTimestamp)
+		//	{
+		//		cimvalue = CIMitar::Timestamp(Val.datetime.u.timestamp);
+		//	}
+		//	else
+		//	{
+		//		cimvalue = CIMitar::Interval(Val.datetime.u.interval);
+		//	}
+		//	break;
+		//case MI_DATETIMEA:
+		//	if (length > 0 && Val.datetimea.data->isTimestamp)
+		//	{
+		//		VectorizeMIArray <Timestamp>(Val.datetimea.data, length);
+		//	}
+		//	else
+		//	{
+		//		VectorizeMIArray<Interval>(Val.datetimea.data, length);
+		//	}
+		//	break;
+		//case MI_INSTANCE:	cimvalue = CIMitar::Instance(Val.instance); break;
+		//case MI_INSTANCEA:cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.instancea.data, length); break;
+		//case MI_REAL32:	cimvalue = Val.real32;	break;
+		//case MI_REAL32A:	cimvalue = VectorizeMIArray<float>(Val.real32a.data, length); break;
+		//case MI_REAL64:	cimvalue = Val.real64;	break;
+		//case MI_REAL64A:	cimvalue = VectorizeMIArray<double>(Val.real64a.data, length); break;
+		//case MI_REFERENCE:cimvalue = CIMitar::Instance(Val.reference);	break;
+		//case MI_REFERENCEA:	cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.referencea.data, length); break;
+		//case MI_SINT8:		cimvalue = Val.sint8;	break;
+		//case MI_SINT8A:	cimvalue = VectorizeMIArray<int>(Val.sint8a.data, length); break;
+		//case MI_SINT16:	cimvalue = Val.sint16;	break;
+		//case MI_SINT16A:	cimvalue = VectorizeMIArray<int>(Val.sint16a.data, length); break;
+		//case MI_SINT32:	cimvalue = Val.sint32;	break;
+		//case MI_SINT32A:	cimvalue = VectorizeMIArray<int>(Val.sint32a.data, length); break;
+		//case MI_SINT64:	cimvalue = Val.sint64;	break;
+		//case MI_SINT64A:	cimvalue = VectorizeMIArray<long long>(Val.sint64a.data, length); break;
+		//case MI_STRING:	cimvalue = Val.string;	break;
+		//case MI_STRINGA:	cimvalue = VectorizeMIArray<wstring>(Val.stringa.data, length); break;
+		//case MI_UINT8:		cimvalue = Val.uint8;	break;
+		//case MI_UINT8A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint8a.data, length); break;
+		//case MI_UINT16:	cimvalue = Val.uint16;	break;
+		//case MI_UINT16A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint16a.data, length); break;
+		//case MI_UINT32:	cimvalue = Val.uint32;	break;
+		//case MI_UINT32A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint32a.data, length); break;
+		//case MI_UINT64:	cimvalue = Val.uint64;	break;
+		//case MI_UINT64A:	cimvalue = VectorizeMIArray<unsigned long long>(Val.uint64a.data, length); break;
+	default:				cimvalue = Val.boolean;	break;
 	}
 }
+
 template <typename visitortype>
-class BaseVisitor
+struct BaseVisitor
 {
 private:
-	virtual const visitortype DefaultValue() const noexcept = 0;
-	virtual const visitortype StringConverter(const wstring&) const noexcept = 0;
+	virtual const visitortype operator()(const wstring&) const noexcept = 0;
+	virtual const visitortype operator()(const Instance&) const noexcept = 0;
+	virtual const visitortype operator()(const Interval&) const noexcept = 0;
+	virtual const visitortype operator()(const Timestamp&) const noexcept = 0;
 public:
-	const visitortype operator()(const wstring& str)const noexcept { try { return StringConverter(forward<const wstring&>(str)); } catch (...) { return DefaultValue(); } }
-	const visitortype operator()(const wchar_t* str)const noexcept { return str == nullptr ? false : this->operator()(wstring{ str }); }
-	template <class T, typename = enable_if_t<is_trivially_constructible_v<T> && !is_same_v<wchar_t, T>>>
-	const visitortype operator()(T t) const noexcept { return static_cast<bool>(t); }
-	const visitortype operator()(wchar_t ch) const noexcept { return ch != L'0'; }
-	template <class T>
-	const visitortype operator()(vector<T>& t)
-	{
-		return t.size() ? this->operator()(t[0]) : DefaultValue();
-	}
-	template <typename T>
-	static const visitortype UnitTransformer(const T& source) noexcept
-	{
-		return visitortype{}(source);
-	}
+	const visitortype& operator()(const visitortype& value) { return value; }
 	virtual ~BaseVisitor() = default;
 };
 
-class BoolVisitor :public BaseVisitor<bool>
+struct BoolVisitor : public BaseVisitor<bool>
 {
-private:
-	const bool DefaultValue() const noexcept { return false; }
-	const bool StringConverter(const wstring& str) const noexcept override
+	const bool operator()(const wchar_t ch) const noexcept { return !(ch == L'0' || ch == 0); }
+	template <typename T, typename = enable_if<is_integral<T>::value>>
+	const bool operator()(const T integral) const noexcept { return integral != 0; }
+	const bool operator()(const wstring& str) const noexcept
 	{
-		try { return str.size() > 0 && stold(str) != 0l; }
+		try
+		{
+			return str.size() > 0 && stold(str) != 0;
+		}
 		catch (...)
 		{
 			return false;
 		}
 	}
-public:
-	using BaseVisitor::BaseVisitor;
+	const bool operator()(const Instance&) const noexcept override { return true; }
+	const bool operator()(const Interval&) const noexcept override { return true; }
+	const bool operator()(const Timestamp&) const noexcept override { return true; }
+	template<typename T>
+	const bool operator()(const vector<T>& vec)
+	{
+		for (auto const& i : vec)
+		{
+			if (this->operator()(i)) return true;
+		}
+		return false;
+	}
 };
+
+struct Char16Visitor :public BaseVisitor<wchar_t>
+{
+private:
+	static const wchar_t DefaultValue = L' ';
+public:
+	template <typename T, typename = enable_if<is_integral<T>::value>>
+	const wchar_t operator()(const T integral) const noexcept { return static_cast<wchar_t>(integral); }
+	const wchar_t operator()(const wstring& str) const noexcept { return str.size() ? str.at(0) : DefaultValue; }
+	const wchar_t operator()(const Instance&) const noexcept { return DefaultValue; }
+	const wchar_t operator()(const Interval&) const noexcept { return DefaultValue; }
+	const wchar_t operator()(const Timestamp&) const noexcept { return DefaultValue; }
+	template<typename T>
+	const wchar_t operator()(const vector<T>& vec) { return DefaultValue; }
+};
+
+class DateTimeVisitor :public BaseVisitor<DateTime>
+{
+private:
+	const DateTime DefaultValue{ DateTime{} };
+public:
+	template <typename T, typename = enable_if<is_integral_v<T>>>
+	const DateTime operator()(const T integral) const noexcept { return DefaultValue; }
+	const DateTime operator()(const wstring& str) const noexcept { return DefaultValue; }
+	const DateTime operator()(const Instance&) const noexcept { return DefaultValue; }
+	//const DateTime StringConverter(const wstring& str) const noexcept override
+	//{
+	//	return DateTime{}; // todo
+	//}
+};
+
+class InstanceVisitor : public BaseVisitor<Instance>
+{};
 
 template <typename T, typename UnitConverter>
 class BaseVisitorArray
 {
 private:
-	UnitConverter Transformer{};
+	//UnitConverter Transformer{};
 	static vector<T> NewEmpty(const size_t size, const bool autofill = false)
 	{
 		auto ne{ vector<T>() };
@@ -216,7 +258,7 @@ public:
 	{
 		auto ov{ vector<T>() };
 		ov.reserve(sv.size());
-		transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
+		//transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
 		return ov;
 	}
 	virtual ~BaseVisitorArray() = default;
@@ -228,5 +270,27 @@ public:
 class BoolAVisitor :public BaseVisitorArray<bool, BoolVisitor>
 {
 public:
-	using BaseVisitorArray::operator();
+	using BaseVisitorArray::BaseVisitorArray;
 };
+
+const bool Value::Boolean() const noexcept
+{
+	return visit(BoolVisitor{}, cimvalue);
+}
+
+const wchar_t Value::Char16() const noexcept
+{
+	return visit(Char16Visitor{}, cimvalue);
+}
+
+const DateTime Value::DateTime() const noexcept
+{
+	//return visit(DateTimeVisitor{}, cimvalue);
+	return CIMitar::DateTime{};
+}
+
+//
+//const vector<bool> Value::BooleanA() const noexcept
+//{
+//	return std::visit(BoolAVisitor{}, cimvalue);
+//}

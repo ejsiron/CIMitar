@@ -3,18 +3,28 @@
 
 using namespace CIMitar;
 
-constexpr Interval::Interval(MI_Interval* MIInterval) noexcept
+static constexpr void FromMI(Interval& cimint, const MI_Interval& miint)
 {
-	Days = MIInterval->days;
-	Hours = MIInterval->hours;
-	Minutes = MIInterval->minutes;
-	Seconds = MIInterval->seconds;
-	Microseconds = MIInterval->microseconds;
+	cimint.Days = miint.days;
+	cimint.Hours = miint.hours;
+	cimint.Minutes = miint.minutes;
+	cimint.Seconds = miint.seconds;
+	cimint.Microseconds = miint.microseconds;
+}
+
+Interval::Interval(const MI_Interval& MIInterval) noexcept
+{
+	FromMI(*this, MIInterval);
+}
+
+Interval::Interval(const MI_Datetime& MIDatetime) noexcept
+{
+	FromMI(*this, MIDatetime.u.interval);
 }
 
 const MI_Interval Interval::ToMIInterval() const noexcept
 {
-	return MI_Interval { Days, Hours, Minutes, Seconds, Microseconds };
+	return MI_Interval{ Days, Hours, Minutes, Seconds, Microseconds };
 }
 
 const MI_Timestamp Interval::ToMITimestamp() const noexcept
@@ -39,16 +49,26 @@ const bool CIMitar::operator==(const Interval& lhs, const Interval& rhs) noexcep
 	return lhs.ToMIInterval() == rhs.ToMIInterval();
 }
 
-constexpr Timestamp::Timestamp(MI_Timestamp* Timestamp) noexcept
+static constexpr void FromMI(Timestamp& cimts, const MI_Timestamp& mits)
 {
-	Year = Timestamp->year;
-	Month = Timestamp->month;
-	Day = Timestamp->day;
-	Hour = Timestamp->hour;
-	Minute = Timestamp->minute;
-	Second = Timestamp->second;
-	Microseconds = Timestamp->microseconds;
-	UTCOffset = Timestamp->utc;
+	cimts.Year = mits.year;
+	cimts.Month = mits.month;
+	cimts.Day = mits.day;
+	cimts.Hour = mits.hour;
+	cimts.Minute = mits.minute;
+	cimts.Second = mits.second;
+	cimts.Microseconds = mits.microseconds;
+	cimts.UTCOffset = mits.utc;
+}
+
+Timestamp::Timestamp(const MI_Datetime& Datetime) noexcept
+{
+	FromMI(*this, Datetime.u.timestamp);
+}
+
+Timestamp::Timestamp(const MI_Timestamp& Timestamp) noexcept
+{
+	FromMI(*this, Timestamp);
 }
 
 const MI_Timestamp Timestamp::ToMITimestamp() const noexcept
@@ -73,12 +93,10 @@ const bool CIMitar::operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs)
 		lhs.utc == rhs.utc;
 }
 
-
 const bool CIMitar::operator==(const Timestamp& lhs, const Timestamp& rhs) noexcept
 {
 	return lhs.ToMITimestamp() == rhs.ToMITimestamp();
 }
-
 
 /*
 Conversion functions and time utilies

@@ -91,8 +91,8 @@ namespace CIMitar
 	public:
 		Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
 		Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
-		Error(const Error&) noexcept;
-		Error operator=(const Error&) noexcept;
+		Error(const Error&) noexcept {};
+		//Error operator=(const Error&) noexcept {}; //todo:fix
 		const unsigned int CIMStatusCode() const noexcept;
 		const std::wstring CIMStatusCodeDescription() const noexcept;
 		const std::wstring Activity() const noexcept;
@@ -152,7 +152,8 @@ namespace CIMitar
 		unsigned int Seconds{ 0 };
 		unsigned int Microseconds{ 0 };
 		Interval() noexcept = default;
-		Interval(MI_Interval* MIInterval) noexcept;
+		Interval(const MI_Datetime& MIDatetime) noexcept;
+		Interval(const MI_Interval& MIInterval) noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
 	};
@@ -172,7 +173,8 @@ namespace CIMitar
 		unsigned int Microseconds{ 0 };
 		int UTCOffset{ 0 };
 		Timestamp() noexcept = default;
-		Timestamp(MI_Timestamp* MITimestamp) noexcept;
+		Timestamp(const MI_Datetime& MIDatetime) noexcept;
+		Timestamp(const MI_Timestamp& MITimestamp) noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
 	};
@@ -541,39 +543,6 @@ namespace CIMitar
 		UInt64A
 	};
 
-	class Value
-	{
-	private:
-		std::variant<wchar_t, unsigned int, int, unsigned long long, long long, float, double, Interval, Timestamp, std::wstring, Instance,
-			std::vector<bool>, std::vector<wchar_t>, std::vector<unsigned int>, std::vector<int>, std::vector<unsigned long long>,
-			std::vector<long long>, std::vector<float>, std::vector<double>, std::vector<Interval>,
-			std::vector<Timestamp>, std::vector<std::wstring>, std::vector<Instance>>
-			value;
-		CIMTypes cimtype;
-		bool isarray{ false };
-	public:
-		Value(MI_Value& Val, const MI_Type Type) noexcept;
-		const bool Boolean() const noexcept;
-		const std::vector<bool> BooleanA() const noexcept;
-		const wchar_t Char16() const noexcept;
-		const std::vector<wchar_t> Char16A() const noexcept;
-		const DateTime DateTime() const noexcept;
-		const std::vector<CIMitar::DateTime> DateTimeA() const noexcept;
-		const Instance& Instance() const noexcept;
-		const std::vector<CIMitar::Instance> InstanceA() const noexcept;
-		const int SignedInt() const noexcept;
-		const std::vector<int> SignedIntA() const noexcept;
-		const unsigned int UnsignedInt() const noexcept;
-		const std::vector<unsigned int> UnsignedIntA() const noexcept;
-		const long SignedInt64() const noexcept;
-		const std::vector<long> SignedInt64A() const noexcept;
-		const float Real32() const noexcept;
-		const std::vector<float> Real32A() const noexcept;
-		const double Real64() const noexcept;
-		const std::vector<double> Real64A() const noexcept;
-		const bool IsArray() const noexcept { return isarray; }
-	};
-
 	class Qualifier
 	{
 	private:
@@ -694,6 +663,60 @@ namespace CIMitar
 	const bool TestConnection();
 	const bool TestConnection(Session& Session);
 	// TODO: test with callbacks
+
+	class Value
+	{
+	private:
+		std::variant<
+			wchar_t,
+			unsigned int,
+			int,
+			unsigned long long,
+			long long,
+			float,
+			double,
+			CIMitar::Instance,
+			CIMitar::Interval,
+			CIMitar::Timestamp,
+			std::wstring,
+			std::vector<bool>,
+			std::vector<wchar_t>,
+			std::vector<unsigned int>,
+			std::vector<int>,
+			std::vector<unsigned long long>,
+			std::vector<long long>,
+			std::vector<float>,
+			std::vector<double>,
+			std::vector<CIMitar::Interval>,
+			std::vector<CIMitar::Timestamp>,
+			std::vector<std::wstring>,
+			std::vector<CIMitar::Instance>
+		>
+			cimvalue;
+		CIMTypes cimtype;
+		bool isarray{ false };
+	public:
+		Value(MI_Value& Val, const MI_Type Type) noexcept;
+		const bool Boolean() const noexcept;
+		const std::vector<bool> BooleanA() const noexcept;
+		const wchar_t Char16() const noexcept;
+		const std::vector<wchar_t> Char16A() const noexcept;
+		const DateTime DateTime() const noexcept;
+		const std::vector<CIMitar::DateTime> DateTimeA() const noexcept;
+		const Instance Instance() const noexcept;
+		const std::vector<CIMitar::Instance> InstanceA() const noexcept;
+		const int SignedInt() const noexcept;
+		const std::vector<int> SignedIntA() const noexcept;
+		const unsigned int UnsignedInt() const noexcept;
+		const std::vector<unsigned int> UnsignedIntA() const noexcept;
+		const long SignedInt64() const noexcept;
+		const std::vector<long> SignedInt64A() const noexcept;
+		const float Real32() const noexcept;
+		const std::vector<float> Real32A() const noexcept;
+		const double Real64() const noexcept;
+		const std::vector<double> Real64A() const noexcept;
+		const bool IsArray() const noexcept { return isarray; }
+	};
 }
 
 #endif CIMITAR_CIMITAR_H_INCLUDED

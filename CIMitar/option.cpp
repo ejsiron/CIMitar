@@ -9,7 +9,7 @@ void ProcessResult(MI_Result Result, ErrorStack& ErrorLog, OpCodes OpCode, wstri
 {
 	if (Result != MI_RESULT_OK)
 	{
-		ErrorLog.emplace_back(Error(static_cast<const unsigned int>(Result), static_cast<const int>(OpCode), wstring{ L"Applying: " + OptionName }));
+		ErrorLog.emplace_back(Error{ static_cast<const unsigned int>(Result), OpCode, wstring{ L"Applying: " + OptionName } });
 	}
 }
 

@@ -14,7 +14,7 @@ Instance::Instance(const MI_Instance* SourceInstance) noexcept
 {
 	if (SourceInstance != nullptr)
 	{
-		ciminstance = make_unique<MI_Instance>(CloneInstance(SourceInstance));
+		ciminstance = unique_ptr<MI_Instance>(CloneInstance(SourceInstance));
 	}
 }
 
