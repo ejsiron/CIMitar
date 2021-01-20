@@ -707,16 +707,20 @@ namespace CIMitar
 		const std::vector<CIMitar::DateTime> DateTimeA() const noexcept;
 		const Instance Instance() const noexcept;
 		const std::vector<CIMitar::Instance> InstanceA() const noexcept;
-		const int SignedInt() const noexcept;
-		const std::vector<int> SignedIntA() const noexcept;
-		const unsigned int UnsignedInt() const noexcept;
-		const std::vector<unsigned int> UnsignedIntA() const noexcept;
-		const long SignedInt64() const noexcept;
-		const std::vector<long> SignedInt64A() const noexcept;
 		const float Real32() const noexcept;
 		const std::vector<float> Real32A() const noexcept;
 		const double Real64() const noexcept;
 		const std::vector<double> Real64A() const noexcept;
+		const std::wstring String() const noexcept;
+		const std::vector<std::wstring> StringA() const noexcept;
+		const int SignedInt() const noexcept;
+		const std::vector<int> SignedIntA() const noexcept;
+		const long SignedInt64() const noexcept;
+		const std::vector<long> SignedInt64A() const noexcept;
+		const unsigned int UnsignedInt() const noexcept;
+		const std::vector<unsigned int> UnsignedIntA() const noexcept;
+		const unsigned long UnsignedInt64() const noexcept;
+		const std::vector<unsigned long> UnsignedInt64A() const noexcept;
 	};
 }
 

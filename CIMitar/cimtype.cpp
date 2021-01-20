@@ -111,55 +111,55 @@ Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 	// All Vals should come from an MI provider
 	switch (Type)
 	{
-		//case MI_BOOLEANA:	cimvalue = VectorizeMIArray<bool>(Val.booleana.data, length); break;
+	case MI_BOOLEANA:	cimvalue = VectorizeMIArray<bool>(Val.booleana.data, length); break;
 	case MI_CHAR16:	cimvalue = static_cast<wchar_t>(Val.char16); break;
-		//case MI_CHAR16A:	cimvalue = VectorizeMIArray<wchar_t>(Val.char16a.data, length); break;
-		//case MI_DATETIME:
-		//	if (Val.datetime.isTimestamp)
-		//	{
-		//		cimvalue = CIMitar::Timestamp(Val.datetime.u.timestamp);
-		//	}
-		//	else
-		//	{
-		//		cimvalue = CIMitar::Interval(Val.datetime.u.interval);
-		//	}
-		//	break;
-		//case MI_DATETIMEA:
-		//	if (length > 0 && Val.datetimea.data->isTimestamp)
-		//	{
-		//		VectorizeMIArray <Timestamp>(Val.datetimea.data, length);
-		//	}
-		//	else
-		//	{
-		//		VectorizeMIArray<Interval>(Val.datetimea.data, length);
-		//	}
-		//	break;
-		//case MI_INSTANCE:	cimvalue = CIMitar::Instance(Val.instance); break;
-		//case MI_INSTANCEA:cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.instancea.data, length); break;
-		//case MI_REAL32:	cimvalue = Val.real32;	break;
-		//case MI_REAL32A:	cimvalue = VectorizeMIArray<float>(Val.real32a.data, length); break;
-		//case MI_REAL64:	cimvalue = Val.real64;	break;
-		//case MI_REAL64A:	cimvalue = VectorizeMIArray<double>(Val.real64a.data, length); break;
-		//case MI_REFERENCE:cimvalue = CIMitar::Instance(Val.reference);	break;
-		//case MI_REFERENCEA:	cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.referencea.data, length); break;
-		//case MI_SINT8:		cimvalue = Val.sint8;	break;
-		//case MI_SINT8A:	cimvalue = VectorizeMIArray<int>(Val.sint8a.data, length); break;
-		//case MI_SINT16:	cimvalue = Val.sint16;	break;
-		//case MI_SINT16A:	cimvalue = VectorizeMIArray<int>(Val.sint16a.data, length); break;
-		//case MI_SINT32:	cimvalue = Val.sint32;	break;
-		//case MI_SINT32A:	cimvalue = VectorizeMIArray<int>(Val.sint32a.data, length); break;
-		//case MI_SINT64:	cimvalue = Val.sint64;	break;
-		//case MI_SINT64A:	cimvalue = VectorizeMIArray<long long>(Val.sint64a.data, length); break;
-		//case MI_STRING:	cimvalue = Val.string;	break;
-		//case MI_STRINGA:	cimvalue = VectorizeMIArray<wstring>(Val.stringa.data, length); break;
-		//case MI_UINT8:		cimvalue = Val.uint8;	break;
-		//case MI_UINT8A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint8a.data, length); break;
-		//case MI_UINT16:	cimvalue = Val.uint16;	break;
-		//case MI_UINT16A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint16a.data, length); break;
-		//case MI_UINT32:	cimvalue = Val.uint32;	break;
-		//case MI_UINT32A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint32a.data, length); break;
-		//case MI_UINT64:	cimvalue = Val.uint64;	break;
-		//case MI_UINT64A:	cimvalue = VectorizeMIArray<unsigned long long>(Val.uint64a.data, length); break;
+	case MI_CHAR16A:	cimvalue = VectorizeMIArray<wchar_t>(Val.char16a.data, length); break;
+	case MI_DATETIME:
+		if (Val.datetime.isTimestamp)
+		{
+			cimvalue = CIMitar::Timestamp(Val.datetime.u.timestamp);
+		}
+		else
+		{
+			cimvalue = CIMitar::Interval(Val.datetime.u.interval);
+		}
+		break;
+	case MI_DATETIMEA:
+		if (length > 0 && Val.datetimea.data->isTimestamp)
+		{
+			VectorizeMIArray <Timestamp>(Val.datetimea.data, length);
+		}
+		else
+		{
+			VectorizeMIArray<Interval>(Val.datetimea.data, length);
+		}
+		break;
+	case MI_INSTANCE:	cimvalue = CIMitar::Instance(Val.instance); break;
+	case MI_INSTANCEA:cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.instancea.data, length); break;
+	case MI_REAL32:	cimvalue = Val.real32;	break;
+	case MI_REAL32A:	cimvalue = VectorizeMIArray<float>(Val.real32a.data, length); break;
+	case MI_REAL64:	cimvalue = Val.real64;	break;
+	case MI_REAL64A:	cimvalue = VectorizeMIArray<double>(Val.real64a.data, length); break;
+	case MI_REFERENCE:cimvalue = CIMitar::Instance(Val.reference);	break;
+	case MI_REFERENCEA:	cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.referencea.data, length); break;
+	case MI_SINT8:		cimvalue = Val.sint8;	break;
+	case MI_SINT8A:	cimvalue = VectorizeMIArray<int>(Val.sint8a.data, length); break;
+	case MI_SINT16:	cimvalue = Val.sint16;	break;
+	case MI_SINT16A:	cimvalue = VectorizeMIArray<int>(Val.sint16a.data, length); break;
+	case MI_SINT32:	cimvalue = Val.sint32;	break;
+	case MI_SINT32A:	cimvalue = VectorizeMIArray<int>(Val.sint32a.data, length); break;
+	case MI_SINT64:	cimvalue = Val.sint64;	break;
+	case MI_SINT64A:	cimvalue = VectorizeMIArray<long long>(Val.sint64a.data, length); break;
+	case MI_STRING:	cimvalue = Val.string;	break;
+	case MI_STRINGA:	cimvalue = VectorizeMIArray<wstring>(Val.stringa.data, length); break;
+	case MI_UINT8:		cimvalue = Val.uint8;	break;
+	case MI_UINT8A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint8a.data, length); break;
+	case MI_UINT16:	cimvalue = Val.uint16;	break;
+	case MI_UINT16A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint16a.data, length); break;
+	case MI_UINT32:	cimvalue = Val.uint32;	break;
+	case MI_UINT32A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint32a.data, length); break;
+	case MI_UINT64:	cimvalue = Val.uint64;	break;
+	case MI_UINT64A:	cimvalue = VectorizeMIArray<unsigned long long>(Val.uint64a.data, length); break;
 	default:				cimvalue = Val.boolean;	break;
 	}
 }
@@ -228,6 +228,18 @@ private:
 	const Instance DefaultValue() const noexcept { return Instance::Empty(); }
 };
 
+class StringVisitor : public BaseVisitor<wstring>
+{
+private:
+	const wstring DefaultValue() const noexcept { return wstring{}; }
+public:
+	template <typename T>
+	typename enable_if_t<is_integral_v<T> && sizeof(T) <= sizeof(wchar_t), const wstring>
+		operator()(const T integral) const noexcept { return to_wstring(integral); }
+	// TODO: string conversions
+	using BaseVisitor::operator();
+};
+
 template <typename T>
 class NumericVisitor : public BaseVisitor<T>
 {
@@ -267,6 +279,7 @@ class Char16AVisitor :public BaseVisitorArray<wchar_t, Char16Visitor> {};
 class DateTimeAVisitor :public BaseVisitorArray<DateTime, DateTimeVisitor> {};
 template <typename T>
 class NumericAVisitor :public BaseVisitorArray<T, NumericVisitor<T>> {};
+class StringAVisitor :public BaseVisitorArray<wstring, StringVisitor> {};
 
 const bool Value::Boolean() const noexcept
 {
@@ -298,26 +311,6 @@ const vector<DateTime> Value::DateTimeA() const noexcept
 	return visit(DateTimeAVisitor{}, cimvalue);
 }
 
-const int Value::SignedInt() const noexcept
-{
-	return visit(NumericVisitor<int>{}, cimvalue);
-}
-
-const vector<int> Value::SignedIntA() const noexcept
-{
-	return visit(NumericAVisitor<int>{}, cimvalue);
-}
-
-const unsigned int Value::UnsignedInt() const noexcept
-{
-	return visit(NumericVisitor<unsigned int>{}, cimvalue);
-}
-
-const vector<unsigned int> Value::UnsignedIntA() const noexcept
-{
-	return visit(NumericAVisitor<unsigned int>{}, cimvalue);
-}
-
 const float Value::Real32() const noexcept
 {
 	return visit(NumericVisitor<float>{}, cimvalue);
@@ -336,4 +329,54 @@ const double Value::Real64() const noexcept
 const vector<double> Value::Real64A() const noexcept
 {
 	return visit(NumericAVisitor<double>{}, cimvalue);
+}
+
+const int Value::SignedInt() const noexcept
+{
+	return visit(NumericVisitor<int>{}, cimvalue);
+}
+
+const vector<int> Value::SignedIntA() const noexcept
+{
+	return visit(NumericAVisitor<int>{}, cimvalue);
+}
+
+const long Value::SignedInt64() const noexcept
+{
+	return visit(NumericVisitor<long>{}, cimvalue);
+}
+
+const std::vector<long> Value::SignedInt64A() const noexcept
+{
+	return visit(NumericAVisitor<long>{}, cimvalue);
+}
+
+const wstring Value::String() const noexcept
+{
+	return visit(StringVisitor{}, cimvalue);
+}
+
+const vector<wstring> Value::StringA() const noexcept
+{
+	return visit(StringAVisitor{}, cimvalue);
+}
+
+const unsigned int Value::UnsignedInt() const noexcept
+{
+	return visit(NumericVisitor<unsigned int>{}, cimvalue);
+}
+
+const vector<unsigned int> Value::UnsignedIntA() const noexcept
+{
+	return visit(NumericAVisitor<unsigned int>{}, cimvalue);
+}
+
+const unsigned long Value::UnsignedInt64() const noexcept
+{
+	return visit(NumericVisitor<unsigned long>{}, cimvalue);
+}
+
+const vector<unsigned long> Value::UnsignedInt64A() const noexcept
+{
+	return visit(NumericAVisitor<unsigned long>{}, cimvalue);
 }
