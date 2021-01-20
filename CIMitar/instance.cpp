@@ -7,7 +7,7 @@ static unique_ptr<MI_Instance> CloneInstance(const MI_Instance* SourceInstance) 
 {
 	MI_Instance* ClonedInstance;
 	MI_Instance_Clone(SourceInstance, &ClonedInstance);
-	return make_unique<MI_Instance>(*ClonedInstance);
+	return unique_ptr<MI_Instance>(ClonedInstance);
 }
 
 Instance::Instance(const MI_Instance* SourceInstance) noexcept
@@ -45,14 +45,19 @@ void Instance::swap(Instance& CopySource) noexcept
 	ciminstance.swap(CopySource.ciminstance);
 }
 
+Instance Instance::Empty() noexcept
+{
+	return Instance{ nullptr };
+}
+
 const std::wstring Instance::ServerName() const noexcept
 {
-	return ciminstance->serverName ? ciminstance->serverName : L"";
+	return ciminstance->serverName ? ciminstance->serverName : L"unknown";
 }
 
 const std::wstring Instance::Namespace() const noexcept
 {
-	return ciminstance->nameSpace ? ciminstance->nameSpace : L"";
+	return ciminstance->nameSpace ? ciminstance->nameSpace : L"unknown";
 }
 
 unsigned int Instance::ElementCount() noexcept

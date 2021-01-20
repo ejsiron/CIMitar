@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <map>
 #include <type_traits>
 #include "CIMitar.h"
@@ -5,6 +6,11 @@
 
 using namespace std;
 using namespace CIMitar;
+
+const bool Value::IsArray() const noexcept
+{
+	return isarray;
+}
 
 const MI_Type CIMTypeIDTranslator(const CIMTypes Type) noexcept
 {
@@ -159,23 +165,23 @@ Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 }
 
 template <typename visitortype>
-struct BaseVisitor
+class BaseVisitor
 {
 private:
-	virtual const visitortype operator()(const wstring&) const noexcept = 0;
-	virtual const visitortype operator()(const Instance&) const noexcept = 0;
-	virtual const visitortype operator()(const Interval&) const noexcept = 0;
-	virtual const visitortype operator()(const Timestamp&) const noexcept = 0;
+	virtual const visitortype DefaultValue() const noexcept = 0;
 public:
-	const visitortype& operator()(const visitortype& value) { return value; }
+	virtual const visitortype& operator()(const visitortype& value) const noexcept sealed { return value; }
+	template <typename T>
+	const visitortype operator()(const T&) { return DefaultValue(); }
 	virtual ~BaseVisitor() = default;
 };
 
-struct BoolVisitor : public BaseVisitor<bool>
+class BoolVisitor : public BaseVisitor<bool>
 {
+private:
+	const bool DefaultValue() const noexcept { return false; }
+public:
 	const bool operator()(const wchar_t ch) const noexcept { return !(ch == L'0' || ch == 0); }
-	template <typename T, typename = enable_if<is_integral<T>::value>>
-	const bool operator()(const T integral) const noexcept { return integral != 0; }
 	const bool operator()(const wstring& str) const noexcept
 	{
 		try
@@ -187,95 +193,89 @@ struct BoolVisitor : public BaseVisitor<bool>
 			return false;
 		}
 	}
-	const bool operator()(const Instance&) const noexcept override { return true; }
-	const bool operator()(const Interval&) const noexcept override { return true; }
-	const bool operator()(const Timestamp&) const noexcept override { return true; }
-	template<typename T>
-	const bool operator()(const vector<T>& vec)
+	const bool operator()(const vector<bool>& vec) const noexcept
 	{
-		for (auto const& i : vec)
-		{
-			if (this->operator()(i)) return true;
-		}
-		return false;
+		return vec.size() && vec.at(0) == true ? true : false;
 	}
+	template <typename T>
+	typename enable_if_t<is_integral_v<T> || is_floating_point_v<T>, const bool>
+		operator()(const T& numeric) const noexcept { return numeric != 0; }
+	using BaseVisitor::operator();
 };
 
 struct Char16Visitor :public BaseVisitor<wchar_t>
 {
 private:
-	static const wchar_t DefaultValue = L' ';
+	const wchar_t DefaultValue() const noexcept { return L' '; }
 public:
-	template <typename T, typename = enable_if<is_integral<T>::value>>
-	const wchar_t operator()(const T integral) const noexcept { return static_cast<wchar_t>(integral); }
-	const wchar_t operator()(const wstring& str) const noexcept { return str.size() ? str.at(0) : DefaultValue; }
-	const wchar_t operator()(const Instance&) const noexcept { return DefaultValue; }
-	const wchar_t operator()(const Interval&) const noexcept { return DefaultValue; }
-	const wchar_t operator()(const Timestamp&) const noexcept { return DefaultValue; }
-	template<typename T>
-	const wchar_t operator()(const vector<T>& vec) { return DefaultValue; }
+	template <typename T>
+	typename enable_if_t<is_integral_v<T> && sizeof(T) <= sizeof(wchar_t), const wchar_t>
+		operator()(const T integral) const noexcept { return static_cast<wchar_t>(integral); }
+	const wchar_t operator()(const wstring& str) const noexcept { return str.size() ? str[0] : DefaultValue(); }
+	const wchar_t operator()(const vector<wstring>& strvec) const noexcept { return strvec.size() && strvec[0].size() ? strvec[0][0] : DefaultValue(); }
+	using BaseVisitor::operator();
 };
 
 class DateTimeVisitor :public BaseVisitor<DateTime>
 {
 private:
-	const DateTime DefaultValue{ DateTime{} };
-public:
-	template <typename T, typename = enable_if<is_integral_v<T>>>
-	const DateTime operator()(const T integral) const noexcept { return DefaultValue; }
-	const DateTime operator()(const wstring& str) const noexcept { return DefaultValue; }
-	const DateTime operator()(const Instance&) const noexcept { return DefaultValue; }
-	//const DateTime StringConverter(const wstring& str) const noexcept override
-	//{
-	//	return DateTime{}; // todo
-	//}
+	const DateTime DefaultValue() const noexcept { return DateTime{}; }
 };
 
 class InstanceVisitor : public BaseVisitor<Instance>
-{};
-
-template <typename T, typename UnitConverter>
-class BaseVisitorArray
 {
 private:
-	//UnitConverter Transformer{};
-	static vector<T> NewEmpty(const size_t size, const bool autofill = false)
+	const Instance DefaultValue() const noexcept { return Instance::Empty(); }
+};
+
+template <typename T>
+class NumericVisitor : public BaseVisitor<T>
+{
+private:
+	const T DefaultValue() const noexcept { return 0; }
+};
+
+template <typename T, typename UnitConverter>
+class BaseVisitorArray :BaseVisitor<vector<T>>
+{
+private:
+	UnitConverter Transformer{};
+	static vector<T> NewEmpty(const size_t size)
 	{
 		auto ne{ vector<T>() };
-		if (autofill)
-		{
-			ne.resize(size, T{});
-		}
-		else
-		{
-			ne.reserve(size);
-		}
+		ne.reserve(size);
 		return ne;
+	}
+	const vector<T> DefaultValue() const noexcept
+	{
+		return NewEmpty(0);
 	}
 public:
 	template <typename Source>
-	const vector<T> operator()(const vector<Source>& sv) const
+	const vector<T> operator()(const vector<Source>& sv) const noexcept
 	{
-		auto ov{ vector<T>() };
-		ov.reserve(sv.size());
-		//transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
+		auto ov{ NewEmpty(sv.size()) };
+		transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
 		return ov;
 	}
 	virtual ~BaseVisitorArray() = default;
-	const vector<T> operator()(const vector<T>& sv) const noexcept { return sv; }
-	template <typename Source>
-	const vector<T> operator()(const Source s) const noexcept { return NewEmpty(1, Transformer(s)); }
+	using BaseVisitor<vector<T>>::operator();
 };
 
-class BoolAVisitor :public BaseVisitorArray<bool, BoolVisitor>
-{
-public:
-	using BaseVisitorArray::BaseVisitorArray;
-};
+class BoolAVisitor :public BaseVisitorArray<bool, BoolVisitor> {};
+class Char16AVisitor :public BaseVisitorArray<wchar_t, Char16Visitor> {};
+class DateTimeAVisitor :public BaseVisitorArray<DateTime, DateTimeVisitor> {};
+template <typename T>
+class NumericAVisitor :public BaseVisitorArray<T, NumericVisitor<T>> {};
 
 const bool Value::Boolean() const noexcept
 {
 	return visit(BoolVisitor{}, cimvalue);
+}
+
+const vector<bool> Value::BooleanA() const noexcept
+{
+	return std::visit(BoolAVisitor{}, cimvalue);
 }
 
 const wchar_t Value::Char16() const noexcept
@@ -283,14 +283,57 @@ const wchar_t Value::Char16() const noexcept
 	return visit(Char16Visitor{}, cimvalue);
 }
 
-const DateTime Value::DateTime() const noexcept
+const vector<wchar_t> Value::Char16A() const noexcept
 {
-	//return visit(DateTimeVisitor{}, cimvalue);
-	return CIMitar::DateTime{};
+	return visit(Char16AVisitor{}, cimvalue);
 }
 
-//
-//const vector<bool> Value::BooleanA() const noexcept
-//{
-//	return std::visit(BoolAVisitor{}, cimvalue);
-//}
+const DateTime Value::DateTime() const noexcept
+{
+	return visit(DateTimeVisitor{}, cimvalue);
+}
+
+const vector<DateTime> Value::DateTimeA() const noexcept
+{
+	return visit(DateTimeAVisitor{}, cimvalue);
+}
+
+const int Value::SignedInt() const noexcept
+{
+	return visit(NumericVisitor<int>{}, cimvalue);
+}
+
+const vector<int> Value::SignedIntA() const noexcept
+{
+	return visit(NumericAVisitor<int>{}, cimvalue);
+}
+
+const unsigned int Value::UnsignedInt() const noexcept
+{
+	return visit(NumericVisitor<unsigned int>{}, cimvalue);
+}
+
+const vector<unsigned int> Value::UnsignedIntA() const noexcept
+{
+	return visit(NumericAVisitor<unsigned int>{}, cimvalue);
+}
+
+const float Value::Real32() const noexcept
+{
+	return visit(NumericVisitor<float>{}, cimvalue);
+}
+
+const vector<float> Value::Real32A() const noexcept
+{
+	return visit(NumericAVisitor<float>{}, cimvalue);
+}
+
+const double Value::Real64() const noexcept
+{
+	return visit(NumericVisitor<double>{}, cimvalue);
+}
+
+const vector<double> Value::Real64A() const noexcept
+{
+	return visit(NumericAVisitor<double>{}, cimvalue);
+}

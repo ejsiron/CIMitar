@@ -377,11 +377,12 @@ namespace CIMitar
 		static Instance Clone(const MI_Instance& SourceInstance) noexcept;
 		friend class Session;
 	public:
-		Instance(const Instance&) noexcept;
 		Instance(const MI_Instance*) noexcept;
+		Instance(const Instance&) noexcept;
 		Instance operator=(const Instance&) noexcept;
 		void swap(Instance& CopySource) noexcept;
 		virtual ~Instance();
+		static Instance Empty() noexcept;
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
 		unsigned int ElementCount() noexcept;
@@ -697,6 +698,7 @@ namespace CIMitar
 		bool isarray{ false };
 	public:
 		Value(MI_Value& Val, const MI_Type Type) noexcept;
+		const bool IsArray() const noexcept;
 		const bool Boolean() const noexcept;
 		const std::vector<bool> BooleanA() const noexcept;
 		const wchar_t Char16() const noexcept;
@@ -715,7 +717,6 @@ namespace CIMitar
 		const std::vector<float> Real32A() const noexcept;
 		const double Real64() const noexcept;
 		const std::vector<double> Real64A() const noexcept;
-		const bool IsArray() const noexcept { return isarray; }
 	};
 }
 
