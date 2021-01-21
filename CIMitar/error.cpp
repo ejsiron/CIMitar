@@ -40,6 +40,29 @@ static constexpr array ErrorMessages =
 
 Error::Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const wstring& MoreInformation) noexcept : cimstatuscode(CIMStatusCode), activitycode(ActivityCode), moreinformation(MoreInformation) {}
 
+Error::Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation) noexcept : activitycode(ActivityCode), moreinformation(MoreInformation)
+{	// TODO: parse error instance data
+	Instance ErrorInstance(ExtendedError);
+}
+
+Error Error::operator=(Error CopySource) noexcept
+{
+	if (this != &CopySource)
+	{
+		swap(CopySource);
+	}
+}
+
+void Error::swap(Error& Source)
+{
+	std::swap(cimstatuscode, Source.cimstatuscode);
+	std::swap(cimstatuscodedescription, Source.cimstatuscodedescription);
+	Activity::Codes activitycode{ Activity::Codes::Unknown };
+	std::wstring moreinformation{};
+	std::vector <std::variant<std::wstring, unsigned int>> extendederrordata{};
+	std::unique_ptr<ExtendedError> extendederror{ nullptr };
+}
+
 const unsigned int Error::CIMStatusCode() const noexcept
 {
 	return cimstatuscode;

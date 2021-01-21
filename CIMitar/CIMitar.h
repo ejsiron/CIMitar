@@ -91,8 +91,9 @@ namespace CIMitar
 	public:
 		Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
 		Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
-		Error(const Error&) noexcept {};
-		//Error operator=(const Error&) noexcept {}; //todo:fix
+		Error(const Error&) noexcept;
+		Error operator=(const Error) noexcept;
+		void swap(Error&);
 		const unsigned int CIMStatusCode() const noexcept;
 		const std::wstring CIMStatusCodeDescription() const noexcept;
 		const std::wstring Activity() const noexcept;
