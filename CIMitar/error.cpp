@@ -45,12 +45,18 @@ Error::Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCod
 	Instance ErrorInstance(ExtendedError);
 }
 
+Error::Error(const Error& CopySource) noexcept
+{
+	*this = CopySource;
+}
+
 Error Error::operator=(Error CopySource) noexcept
 {
 	if (this != &CopySource)
 	{
 		swap(CopySource);
 	}
+	return *this;
 }
 
 void Error::swap(Error& Source)
@@ -88,6 +94,16 @@ const wstring Error::CIMStatusCodeDescription() const noexcept
 const wstring Error::Activity() const noexcept
 {
 	return Activity::GetActivity(activitycode);
+}
+
+const wstring Error::Query() const noexcept
+{
+	return query;
+}
+
+const unsigned int Error::ErrorType() const noexcept
+{
+	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::ErrorType);
 }
 
 const wstring Error::MoreInformation() const noexcept
@@ -153,4 +169,28 @@ const unsigned int Error::ErrorSourceFormat() const noexcept
 const wstring Error::OtherErrorSourceFormat() const noexcept
 {
 	return Utility::GetValueOrDefault(extendederror.get(), &ExtendedError::OtherErrorSourceFormat);
+}
+
+ErrorData CIMitar::ConvertErrorToPlainData(Error& SourceError) noexcept
+{
+	return ErrorData{
+		SourceError.CIMStatusCode(),
+		SourceError.CIMStatusCodeDescription(),
+		SourceError.Activity(),
+		SourceError.Query(),
+		SourceError.MoreInformation(),
+		SourceError.ErrorType(),
+		SourceError.OtherErrorType(),
+		SourceError.OwningEntity(),
+		SourceError.MessageID(),
+		SourceError.Message(),
+		SourceError.MessageArguments(),
+		SourceError.PerceivedSeverity(),
+		SourceError.ProbableCause(),
+		SourceError.ProbableCauseDescription(),
+		SourceError.RecommendedActions(),
+		SourceError.ErrorSource(),
+		SourceError.ErrorSourceFormat(),
+		SourceError.OtherErrorSourceFormat()
+	};
 }

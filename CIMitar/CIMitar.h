@@ -87,6 +87,7 @@ namespace CIMitar
 		Activity::Codes activitycode{ Activity::Codes::Unknown };
 		std::wstring moreinformation{};
 		std::vector <std::variant<std::wstring, unsigned int>> extendederrordata{};
+		std::wstring query{ std::wstring{} };	// TODO: this does not yet populate
 		std::unique_ptr<ExtendedError> extendederror{ nullptr };
 	public:
 		Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
@@ -97,6 +98,8 @@ namespace CIMitar
 		const unsigned int CIMStatusCode() const noexcept;
 		const std::wstring CIMStatusCodeDescription() const noexcept;
 		const std::wstring Activity() const noexcept;
+		const std::wstring Query() const noexcept;
+		const unsigned int ErrorType() const noexcept;
 		const std::wstring MoreInformation() const noexcept;
 		const std::wstring OtherErrorType() const noexcept;
 		const std::wstring OwningEntity() const noexcept;
@@ -118,6 +121,7 @@ namespace CIMitar
 		std::wstring CIMStatusCodeDescription{};
 		std::wstring Activity{};
 		std::wstring Query{};
+		std::wstring MoreInformation{};
 		unsigned int ErrorType{ 0 };
 		std::wstring OtherErrorType{};
 		std::wstring OwningEntity{};
@@ -413,7 +417,7 @@ namespace CIMitar
 		virtual ~Session();
 		static Session NullSession;
 		SessionOptions Options{};
-		ErrorStack LastErrors() noexcept;
+		const ErrorStack LastErrors() noexcept;
 		const bool Connect();
 		const bool Connect(const SessionProtocols Protocol);
 		const bool Close();
