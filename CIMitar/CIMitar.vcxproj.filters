@@ -33,12 +33,6 @@
     <ClInclude Include="instance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="element.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="value.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="localaddresses.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -51,12 +45,12 @@
     <ClInclude Include="utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="property.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="exceptions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cimtype.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="formatters.cpp">
@@ -66,9 +60,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="instance.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="element.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="value.cpp">
@@ -104,8 +95,11 @@
     <ClCompile Include="activity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="property.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Architecture.txt" />
+    <Text Include="TODO.txt" />
   </ItemGroup>
 </Project>

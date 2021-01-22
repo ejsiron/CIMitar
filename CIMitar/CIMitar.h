@@ -86,7 +86,7 @@ namespace CIMitar
 		std::wstring cimstatuscodedescription{};
 		Activity::Codes activitycode{ Activity::Codes::Unknown };
 		std::wstring moreinformation{};
-		std::vector <std::variant<std::wstring, unsigned int>> extendederrordata{};
+		std::vector <std::variant<std::wstring, unsigned int>> extendederrordata{};	// TODO: nothing pulls this out yet
 		std::wstring query{ std::wstring{} };	// TODO: this does not yet populate
 		std::unique_ptr<ExtendedError> extendederror{ nullptr };
 	public:
@@ -94,7 +94,7 @@ namespace CIMitar
 		Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
 		Error(const Error&) noexcept;
 		Error operator=(const Error) noexcept;
-		void swap(Error&);
+		void swap(Error&) noexcept;
 		const unsigned int CIMStatusCode() const noexcept;
 		const std::wstring CIMStatusCodeDescription() const noexcept;
 		const std::wstring Activity() const noexcept;
@@ -726,6 +726,21 @@ namespace CIMitar
 		const std::vector<unsigned int> UnsignedIntA() const noexcept;
 		const unsigned long UnsignedInt64() const noexcept;
 		const std::vector<unsigned long> UnsignedInt64A() const noexcept;
+	};
+
+	class Property
+	{
+	private:
+		std::wstring Name{};
+		Value CimValue;
+		CIMTypes Type{ CIMTypes::Boolean };
+		unsigned int MemoryFlag{ 0 };
+	public:
+		Property(const MI_Char* Name, MI_Value* Value, MI_Type Type, MI_Uint32 MemoryFlag);
+		Property(std::wstring& Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag);
+		~Property();
+		const bool IsNull() const noexcept;
+		const bool IsArray() const noexcept;
 	};
 }
 

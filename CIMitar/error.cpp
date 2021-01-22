@@ -45,9 +45,9 @@ Error::Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCod
 	Instance ErrorInstance(ExtendedError);
 }
 
-Error::Error(const Error& CopySource) noexcept
+Error::Error(const Error& Source) noexcept
 {
-	*this = CopySource;
+	//todo:must-fix
 }
 
 Error Error::operator=(Error CopySource) noexcept
@@ -59,7 +59,7 @@ Error Error::operator=(Error CopySource) noexcept
 	return *this;
 }
 
-void Error::swap(Error& Source)
+void Error::swap(Error& Source) noexcept
 {
 	std::swap(cimstatuscode, Source.cimstatuscode);
 	std::swap(cimstatuscodedescription, Source.cimstatuscodedescription);

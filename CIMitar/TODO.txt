@@ -1,0 +1,5 @@
+some copy/swaps don't have working copy constructors
+
+* Options
+** session options
+** operation options

@@ -154,29 +154,27 @@
   <ItemGroup>
     <ClInclude Include="appinit.h" />
     <ClInclude Include="CIMitar.h" />
-    <ClInclude Include="element.h" />
     <ClInclude Include="errorhandler.h" />
     <ClInclude Include="guidformatters.h" />
     <ClInclude Include="instance.h" />
     <ClInclude Include="localaddresses.h" />
     <ClInclude Include="operation.h" />
+    <ClInclude Include="property.h" />
     <ClInclude Include="stringformatters.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="utility.h" />
-    <ClInclude Include="value.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="activity.cpp" />
     <ClCompile Include="appinit.cpp" />
-    <ClCompile Include="cimtype.cpp" />
     <ClCompile Include="class.cpp" />
     <ClCompile Include="error.cpp" />
     <ClCompile Include="localaddresses.cpp" />
     <ClCompile Include="operation.cpp" />
     <ClCompile Include="option.cpp" />
+    <ClCompile Include="property.cpp" />
     <ClCompile Include="time.cpp" />
     <ClCompile Include="session.cpp" />
-    <ClCompile Include="element.cpp" />
     <ClCompile Include="errorhandler.cpp" />
     <ClCompile Include="exceptions.cpp" />
     <ClCompile Include="formatters.cpp" />
@@ -185,7 +183,7 @@
     <ClCompile Include="value.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Architecture.txt" />
+    <Text Include="TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
