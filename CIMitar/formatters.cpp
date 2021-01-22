@@ -1,42 +1,14 @@
-#include "stdafx.h"
 #include "guidformatters.h"
 #include "stringformatters.h"
 #include <iomanip>
 #include <sstream>
 
-constexpr size_t MinItemsForJoinOptimization{ 50 };	// arbitrary number to decide if JoinString pre-allocation calculations are worth it
 
 std::wstring CIMitar::Formatters::UpperCaseString(const std::wstring& InputString)
 {
 	std::wstringstream UpperCaser;
 	UpperCaser << std::uppercase << InputString;
 	return UpperCaser.str();
-}
-
-std::wstring CIMitar::Formatters::JoinString(const std::wstring& Glue, const std::vector<std::wstring>& Parts)
-{
-	std::wstring JoinedString{};
-	if (Parts.size())
-	{
-		if (Parts.size() >= MinItemsForJoinOptimization)
-		{
-			size_t FinalStringLength{ Glue.size() * (Parts.size() - 1) };
-			for (auto const& Part : Parts)
-			{
-				FinalStringLength += Part.size();
-			}
-			JoinedString.resize(FinalStringLength);
-		}
-		JoinedString = *Parts.cbegin();
-		if (JoinedString.size() > 1)
-		{
-			for (auto Part{ ++Parts.cbegin() }; Part != Parts.cend(); ++Part)
-			{
-				JoinedString += Glue + *Part;
-			}
-		}
-	}
-	return JoinedString;
 }
 
 void CIMitar::Formatters::GetGuidFromString(const std::wstring& TextGUID, GUID* Guid)
@@ -73,7 +45,7 @@ void CIMitar::Formatters::GetGuidFromString(const std::wstring& TextGUID, GUID* 
 		{
 			if (ValidCharsFound & 1)
 			{
-				GuidBytes[OutputBytesPosition] = (GuidBytes[OutputBytesPosition] | Buffer);
+				GuidBytes[OutputBytesPosition] = GuidBytes[OutputBytesPosition] | Buffer;
 				++OutputBytesPosition;
 			}
 			else
