@@ -3,11 +3,28 @@
 using namespace CIMitar;
 using namespace std;
 
+void HeapInstanceDeleter(MI_Instance* instance)
+{
+	if (instance)
+	{
+		MI_Instance_Delete(instance);	// this usually makes big boom when it fails, nothing we can do about MI failures though
+	}
+}
+
+void StackDeleter(MI_Instance* instance)
+{
+	if (instance)
+	{
+		MI_Instance_Destruct(instance);
+	}
+}
+
 static unique_ptr<MI_Instance> CloneInstance(const MI_Instance* SourceInstance) noexcept
 {
 	MI_Instance* ClonedInstance;
 	MI_Instance_Clone(SourceInstance, &ClonedInstance);
-	return unique_ptr<MI_Instance>(ClonedInstance);
+	unique_ptr<MI_Instance> x{ClonedInstance, HeapInstanceDeleter}
+	return unique_ptr<MI_Instance>{ClonedInstance, HeapInstanceDeleter};
 }
 
 Instance::Instance(const MI_Instance* SourceInstance) noexcept
@@ -57,7 +74,7 @@ const std::wstring Instance::ServerName() const noexcept
 
 const std::wstring Instance::Namespace() const noexcept
 {
-	return ciminstance->nameSpace ? ciminstance->nameSpace : L"unknown";
+	return ciminstance->nameSpace ? ciminstance->nameSpace : DefaultCIMNamespace;
 }
 
 unsigned int Instance::ElementCount() noexcept

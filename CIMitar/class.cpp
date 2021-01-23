@@ -7,7 +7,11 @@ Class::Class(const MI_Class* SourceClass) noexcept
 {
 	if (SourceClass != nullptr)
 	{
-		cimclass = make_unique<MI_Class>(*SourceClass);
+		MI_Class* ClonedClass;
+		if (MI_RESULT_OK == MI_Class_Clone(SourceClass, &ClonedClass))
+		{
+			cimclass = make_unique<MI_Class>(*ClonedClass);
+		}
 	}
 }
 

@@ -145,6 +145,11 @@
   <ItemGroup>
     <ClCompile Include="TestClient.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CIMitar\CIMitar.vcxproj">
+      <Project>{e767a4fa-b63c-41ed-947f-f7e1ae772823}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

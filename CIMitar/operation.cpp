@@ -67,9 +67,10 @@ static void ExecuteOperation(
 	do
 	{
 		OpFunction(&OpPack.operation, &OpPack.pItem, &OpPack.Walker.MoreResults, &OpPack.ResultCode, &OpPack.pErrorMessage, &OpPack.pErrorDetails);
-		if (OpPack.AcceptMore())
+		if (OpPack.AcceptMore() && OpPack.ResultCode == MI_RESULT_OK)
 		{
-			OpPack.Results.emplace_back(ReturnType{ OpPack.pItem });
+			//OpPack.Results.emplace_back(ReturnType{ OpPack.pItem });
+			OpPack.Results.emplace_back(OpPack.pItem);
 		}
 	} while (OpPack.Walker.MoreResults);
 }
