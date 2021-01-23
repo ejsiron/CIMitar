@@ -2,14 +2,10 @@
 #include <map>
 #include <type_traits>
 #include "CIMitar.h"
+#include "value.h"
 
 using namespace std;
 using namespace CIMitar;
-
-const bool Value::IsArray() const noexcept
-{
-	return isarray;
-}
 
 const MI_Type CIMTypeIDTranslator(const CIMTypes Type) noexcept
 {
@@ -100,6 +96,11 @@ vector<outtype> VectorizeMIArray(const MIType* SourceArray, size_t length) noexc
 	}
 	catch (...) {}
 	return OutVector;
+}
+
+const bool Value::IsArray() const noexcept
+{
+	return isarray;
 }
 
 Value::Value(MI_Value& Val, const MI_Type Type) noexcept

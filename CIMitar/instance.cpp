@@ -67,6 +67,29 @@ unsigned int Instance::ElementCount() noexcept
 	return count;
 }
 
+const std::list<Property> Instance::Properties() noexcept
+{
+	if (!properties.size())
+	{
+		auto PropertyCount{ ElementCount() };
+		if (PropertyCount)
+		{
+			for (unsigned int i{ 0 }; i < PropertyCount; ++i)
+			{
+				const MI_Char* InPropertyName;
+				MI_Value InValue;
+				MI_Type InType;
+				MI_Uint32 InFlags;
+				if (MI_RESULT_OK == MI_Instance_GetElementAt(ciminstance.get(), i, &InPropertyName, &InValue, &InType, &InFlags))
+				{
+					properties.emplace_back(Property{ InPropertyName, InValue, InType, InFlags });
+				}
+			}
+		}
+	}
+	return properties;
+}
+
 Instance::~Instance()
 {
 	if (ciminstance)
@@ -78,4 +101,9 @@ Instance::~Instance()
 		/***************************************************************/
 		MI_Instance_Delete(ciminstance.get());
 	}
+}
+
+void CIMitar::swap(Instance& lhs, Instance& rhs) noexcept
+{
+	lhs.swap(rhs);
 }

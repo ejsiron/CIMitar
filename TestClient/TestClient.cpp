@@ -15,5 +15,6 @@ int main()
 	wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
 	CIMitar::Instance ErrorInstance{ sess.NewInstance(L"CIM_Error") };
 	CIMitar::Instance PoppedInstance{ sess.NewInstance(ErrorInstance) };
+
 	sess.TestConnection();
 }

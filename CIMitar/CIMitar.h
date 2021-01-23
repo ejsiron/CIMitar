@@ -372,7 +372,8 @@ namespace CIMitar
 		void ResetAll();
 	};
 
-	//forward declaration for use in class Instance
+	//forward declarations for use in class Instance
+	class Property;
 	class PropertyDeclaration;
 
 	class Instance
@@ -380,6 +381,7 @@ namespace CIMitar
 	private:
 		std::unique_ptr<MI_Instance> ciminstance{ nullptr };
 		static Instance Clone(const MI_Instance& SourceInstance) noexcept;
+		std::list<Property> properties{};
 		friend class Session;
 	public:
 		Instance(const MI_Instance*) noexcept;
@@ -391,7 +393,7 @@ namespace CIMitar
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
 		unsigned int ElementCount() noexcept;
-		std::list<PropertyDeclaration> Properties{};
+		const std::list<Property> Properties() noexcept;
 		const bool Refresh() noexcept;
 	};
 	void swap(Instance& lhs, Instance& rhs) noexcept;
@@ -731,14 +733,12 @@ namespace CIMitar
 	class Property
 	{
 	private:
-		std::wstring Name{};
-		Value CimValue;
-		CIMTypes Type{ CIMTypes::Boolean };
-		unsigned int MemoryFlag{ 0 };
+		std::wstring name{};
+		Value cimvalue;
+		CIMTypes cimtype{ CIMTypes::Boolean };
+		unsigned int memoryflag{ 0 };
 	public:
-		Property(const MI_Char* Name, MI_Value* Value, MI_Type Type, MI_Uint32 MemoryFlag);
-		Property(std::wstring& Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag);
-		~Property();
+		Property(const MI_Char* Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag) noexcept;
 		const bool IsNull() const noexcept;
 		const bool IsArray() const noexcept;
 	};

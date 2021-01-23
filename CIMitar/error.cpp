@@ -47,7 +47,17 @@ Error::Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCod
 
 Error::Error(const Error& Source) noexcept
 {
-	//todo:must-fix
+	cimstatuscode = Source.cimstatuscode;
+	cimstatuscodedescription = Source.cimstatuscodedescription;
+	activitycode = Source.activitycode;
+	moreinformation = Source.moreinformation;
+	extendederrordata = Source.extendederrordata;
+	query = Source.query;
+	if (Source.extendederror)
+	{
+		ExtendedError tempext = *Source.extendederror;
+		extendederror = unique_ptr<ExtendedError>(&tempext);
+	}
 }
 
 Error Error::operator=(Error CopySource) noexcept
