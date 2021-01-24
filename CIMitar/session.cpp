@@ -173,13 +173,13 @@ const bool CIMitar::operator!=(const Session& lhs, const Session& rhs) noexcept
 
 const bool Session::TestConnection() noexcept
 {
-	return CIMitar::TestConnection(TheSession.get());
+	return Operation::TestConnection(TheSession.get());
 }
 
 Class Session::GetClass(const std::wstring& ClassName) noexcept { return GetClass(GetDefaultNamespace(), ClassName); }
 Class Session::GetClass(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
 {
-	list<Class> FoundClasses{ CIMitar::GetClass(TheSession.get(), Namespace, ClassName, nullptr, nullptr, nullptr) };
+	list<Class> FoundClasses{ Operation::GetClass(TheSession.get(), Namespace, ClassName, nullptr, nullptr, nullptr) };
 	if (FoundClasses.empty())
 	{
 		return Class{ static_cast<const MI_Class*>(nullptr) };
@@ -197,12 +197,26 @@ list<Class> Session::GetClasses(const std::wstring& Namespace, const bool NameOn
 
 list<Class> Session::GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept
 {
-	return EnumerateClasses(TheSession.get(), Namespace, SourceClassName, NameOnly, nullptr, nullptr, nullptr);
+	return Operation::EnumerateClasses(TheSession.get(), Namespace, SourceClassName, NameOnly, nullptr, nullptr, nullptr);
 }
 
 list<Class> Session::GetClasses(const Class& SourceClass, const bool NameOnly) noexcept
 {
-	return EnumerateClasses(TheSession.get(), SourceClass.Namespace(), SourceClass.Name(), NameOnly, nullptr, nullptr, nullptr);
+	return Operation::EnumerateClasses(TheSession.get(), SourceClass.Namespace(), SourceClass.Name(), NameOnly, nullptr, nullptr, nullptr);
+}
+
+list<Instance> Session::GetInstances(const wstring& ClassName, const bool KeysOnly) noexcept
+{
+	return GetInstances(GetDefaultNamespace(), ClassName, KeysOnly);
+}
+
+list<Instance> Session::GetInstances(const wstring& Namespace, const wstring& ClassName, const bool KeysOnly) noexcept
+{
+	return Operation::EnumerateInstances(TheSession.get(), Namespace.c_str(), ClassName.c_str(), KeysOnly, nullptr, nullptr, nullptr);
+}
+list<Instance> Session::GetInstances(const Class& SourceClass, const bool KeysOnly) noexcept
+{
+	return GetInstances(SourceClass.Namespace(), SourceClass.Name(), KeysOnly);
 }
 
 Instance Session::NewInstance(const std::wstring& ClassName) noexcept
@@ -215,12 +229,12 @@ Instance Session::NewInstance(const std::wstring& Namespace, const std::wstring&
 	Class InstanceClass{ GetClass(Namespace, ClassName) };
 	MI_Instance* CreatedInstance;
 	MI_Application_NewInstanceFromClass(&TheCimApplication, ClassName.c_str(), InstanceClass.cimclass.get(), &CreatedInstance);
-	return Instance(CreatedInstance);
+	return Instance{ CreatedInstance, TheSession.get() };
 }
 
 Instance Session::NewInstance(const Instance& SourceInstance) noexcept
 {
-	return CreateInstance(TheSession.get(), SourceInstance.Namespace(), SourceInstance.ciminstance.get(), nullptr, nullptr, nullptr);
+	return Operation::CreateInstance(TheSession.get(), SourceInstance.Namespace(), SourceInstance.ciminstance.get(), nullptr, nullptr, nullptr);
 }
 
 Session CIMitar::NewSession()

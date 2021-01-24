@@ -40,9 +40,9 @@ static constexpr array ErrorMessages =
 
 Error::Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const wstring& MoreInformation) noexcept : cimstatuscode(CIMStatusCode), activitycode(ActivityCode), moreinformation(MoreInformation) {}
 
-Error::Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation) noexcept : activitycode(ActivityCode), moreinformation(MoreInformation)
+Error::Error(MI_Session* Session, const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation) noexcept : activitycode(ActivityCode), moreinformation(MoreInformation)
 {	// TODO: parse error instance data
-	Instance ErrorInstance(ExtendedError);
+	Instance ErrorInstance{ ExtendedError, Session };
 }
 
 Error::Error(const Error& Source) noexcept

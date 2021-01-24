@@ -1,4 +1,5 @@
 #include "CIMitar.h"
+#include "operation.h"
 
 using namespace CIMitar;
 using namespace std;
@@ -10,7 +11,7 @@ static unique_ptr<MI_Instance> CloneInstance(const MI_Instance* SourceInstance) 
 	return unique_ptr<MI_Instance>{ClonedInstance};
 }
 
-Instance::Instance(const MI_Instance* SourceInstance, const bool Destruct) noexcept : destruct(Destruct)
+Instance::Instance(const MI_Instance* SourceInstance, MI_Session* Owner, const bool Destruct) noexcept : destruct(Destruct), owner(Owner)
 {
 	if (SourceInstance != nullptr)
 	{
@@ -18,9 +19,9 @@ Instance::Instance(const MI_Instance* SourceInstance, const bool Destruct) noexc
 	}
 }
 
-Instance Instance::Clone(const MI_Instance& SourceInstance) noexcept
+Instance Instance::Clone(const MI_Instance& SourceInstance, MI_Session* Owner) noexcept
 {
-	return Instance(&SourceInstance);
+	return Instance(&SourceInstance, Owner);
 }
 
 Instance::Instance(const Instance& CopySource) noexcept
@@ -49,7 +50,7 @@ void Instance::swap(Instance& CopySource) noexcept
 
 Instance Instance::Empty() noexcept
 {
-	return Instance{ nullptr };
+	return Instance{ nullptr, nullptr };
 }
 
 const std::wstring Instance::ServerName() const noexcept
@@ -90,6 +91,20 @@ const std::list<Property> Instance::Properties() noexcept
 		}
 	}
 	return properties;
+}
+
+const bool Instance::Refresh() noexcept
+{	// this is crazy inefficient. the real work happens in MI_GetInstance which can't be avoided, so maybe it has no meaningful impact on performance
+	if (owner && ciminstance && ciminstance->nameSpace)
+	{
+		auto ReturnedInstance{ Operation::GetInstance(owner, ciminstance->nameSpace, ciminstance.get(), nullptr, nullptr, nullptr) };
+		if (ReturnedInstance.ciminstance)
+		{
+			*this = move(ReturnedInstance);
+			return true;
+		}
+	}
+	return false;
 }
 
 Instance::~Instance()

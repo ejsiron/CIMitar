@@ -134,13 +134,13 @@ Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 			VectorizeMIArray<Interval>(Val.datetimea.data, length);
 		}
 		break;
-	case MI_INSTANCE:	cimvalue = CIMitar::Instance(Val.instance); break;
+	case MI_INSTANCE:	cimvalue = CIMitar::Instance(Val.instance, nullptr); break;
 	case MI_INSTANCEA:cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.instancea.data, length); break;
 	case MI_REAL32:	cimvalue = Val.real32;	break;
 	case MI_REAL32A:	cimvalue = VectorizeMIArray<float>(Val.real32a.data, length); break;
 	case MI_REAL64:	cimvalue = Val.real64;	break;
 	case MI_REAL64A:	cimvalue = VectorizeMIArray<double>(Val.real64a.data, length); break;
-	case MI_REFERENCE:cimvalue = CIMitar::Instance(Val.reference);	break;
+	case MI_REFERENCE:cimvalue = CIMitar::Instance(Val.reference, nullptr);	break;
 	case MI_REFERENCEA:	cimvalue = VectorizeMIArray<CIMitar::Instance>(Val.referencea.data, length); break;
 	case MI_SINT8:		cimvalue = Val.sint8;	break;
 	case MI_SINT8A:	cimvalue = VectorizeMIArray<int>(Val.sint8a.data, length); break;

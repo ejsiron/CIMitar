@@ -14,7 +14,10 @@ int main()
 	wcout << L"Class server name: " << x.ServerName() << std::endl;
 	wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
 	CIMitar::Instance ErrorInstance{ sess.NewInstance(L"CIM_Error") };
-	CIMitar::Instance PoppedInstance{ sess.NewInstance(ErrorInstance) };
+	for (auto& svc : sess.GetInstances(L"Win32_Service"))
+	{
+		wcout << svc.Namespace() << svc.Refresh() << endl;
+	}
 
 	sess.TestConnection();
 }

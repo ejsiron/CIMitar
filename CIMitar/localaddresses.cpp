@@ -13,6 +13,7 @@ void GetLocalNames(std::vector<std::wstring>& Addresses) noexcept
 {
 	try
 	{
+		Addresses.emplace_back(L".", L"localhost");
 		DWORD BufferSize{ 0 };
 		vector<wchar_t> Buffer{};
 		for (auto NameFormat : {

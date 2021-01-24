@@ -91,7 +91,7 @@ namespace CIMitar
 		std::unique_ptr<ExtendedError> extendederror{ nullptr };
 	public:
 		Error(const unsigned int CIMStatusCode, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
-		Error(const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
+		Error(MI_Session* Session, const MI_Instance* ExtendedError, const Activity::Codes ActivityCode, const std::wstring& MoreInformation = L"") noexcept;
 		Error(const Error&) noexcept;
 		Error operator=(const Error) noexcept;
 		void swap(Error&) noexcept;
@@ -380,12 +380,13 @@ namespace CIMitar
 	{
 	private:
 		std::unique_ptr<MI_Instance> ciminstance{ nullptr };
-		static Instance Clone(const MI_Instance& SourceInstance) noexcept;
+		static Instance Clone(const MI_Instance& SourceInstance, MI_Session* Owner) noexcept;
 		bool destruct{ false };
 		std::list<Property> properties{};
+		MI_Session* owner{ nullptr };
 		friend class Session;
 	public:
-		Instance(const MI_Instance*, const bool Destruct = false) noexcept;
+		Instance(const MI_Instance*, MI_Session* Owner = nullptr, const bool Destruct = false) noexcept;
 		Instance(const Instance&) noexcept;
 		Instance operator=(const Instance&) noexcept;
 		void swap(Instance& CopySource) noexcept;
@@ -430,6 +431,9 @@ namespace CIMitar
 		std::list<Class> GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept;
 		std::list<Class> GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept;
 		std::list<Class> GetClasses(const Class& SourceClass, const bool NameOnly = false) noexcept;
+		std::list<Instance> GetInstances(const std::wstring& ClassName, const bool KeysOnly = false) noexcept;
+		std::list<Instance> GetInstances(const std::wstring& Namespace, const std::wstring& ClassName, const bool KeysOnly = false) noexcept;
+		std::list<Instance> GetInstances(const Class& SourceClass, const bool KeysOnly = false) noexcept;
 		Instance NewInstance(const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const Instance& SourceInstance) noexcept;
