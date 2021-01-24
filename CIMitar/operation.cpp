@@ -29,7 +29,8 @@ public:
 	const MIType* pItem{ nullptr };
 	OpWalker Walker;
 	const bool AcceptMore() { return Walker.AcceptMore(); }
-	std::vector<CIMitarType> Results{};
+	std::list<CIMitarType> Results{};
+	void AddResult() noexcept { Results.emplace_back(pItem); }
 	BaseOperationPack() noexcept :Walker(OpWalker()) {};
 	BaseOperationPack(const unsigned int MaximumResults) noexcept :Walker(OpWalker(MaximumResults)) {}
 	BaseOperationPack(MI_OperationCallbacks& Callbacks) noexcept :callbacks(Callbacks), Walker(OpWalker()) {}
@@ -55,7 +56,12 @@ public:
 class InstanceOpPack : public BaseOperationPack<MI_Instance, CIMitar::Instance>
 {
 public:
+	bool Destruct{ false };
 	using BaseOperationPack::BaseOperationPack;
+	void AddResult() noexcept
+	{
+		Results.emplace_back(pItem, Destruct);
+	}
 };
 
 template <typename ReturnType, typename MIReturnType, typename OperationPack, typename OperationFunction, typename SessionFunction, typename... SessionFunctionArgs>
@@ -69,35 +75,36 @@ static void ExecuteOperation(
 		OpFunction(&OpPack.operation, &OpPack.pItem, &OpPack.Walker.MoreResults, &OpPack.ResultCode, &OpPack.pErrorMessage, &OpPack.pErrorDetails);
 		if (OpPack.AcceptMore() && OpPack.ResultCode == MI_RESULT_OK)
 		{
-			//OpPack.Results.emplace_back(ReturnType{ OpPack.pItem });
-			OpPack.Results.emplace_back(OpPack.pItem);
+			//OpPack.Results.emplace_back(OpPack.pItem);
+			OpPack.AddResult();
 		}
 	} while (OpPack.Walker.MoreResults);
 }
 
 template <typename GetClassFunction, typename... GetClassFunctionArgs>
-static vector<Class> GetClass(MI_Session* TheSession, GetClassFunction Function, GetClassFunctionArgs&&... Args)
+static list<Class> GetClass(MI_Session* TheSession, GetClassFunction Function, GetClassFunctionArgs&&... Args)
 {
 	ClassOpPack oppack{};
 	ExecuteOperation<Class, MI_Class, ClassOpPack>(TheSession, oppack, MI_Operation_GetClass, Function, forward<GetClassFunctionArgs>(Args)...);
 	return oppack.Results;
 }
 
-vector<Class> CIMitar::EnumerateClasses(MI_Session* TheSession, const wstring& Namespace, const wstring& ClassName, bool NamesOnly, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+list<Class> CIMitar::EnumerateClasses(MI_Session* TheSession, const wstring& Namespace, const wstring& ClassName, bool NamesOnly, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
 	return GetClass(TheSession, MI_Session_EnumerateClasses, 0, nullptr, Namespace.c_str(),
 		ClassName.c_str(), NamesOnly, callbacks);
 }
 
-vector<Class> CIMitar::GetClass(MI_Session* TheSession, const wstring& Namespace, const wstring& ClassName, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+list<Class> CIMitar::GetClass(MI_Session* TheSession, const wstring& Namespace, const wstring& ClassName, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
 	return GetClass(TheSession, MI_Session_GetClass, 0, nullptr, Namespace.c_str(), ClassName.c_str(), callbacks);
 }
 
 template <typename GetInstanceSessionFunction, typename... GetInstanceSessionFunctionArgs>
-static vector<Instance> GetInstance(MI_Session* TheSession, GetInstanceSessionFunction Function, GetInstanceSessionFunctionArgs&&... Args)
+static list<Instance> GetInstance(MI_Session* TheSession, GetInstanceSessionFunction Function, GetInstanceSessionFunctionArgs&&... Args)
 {
 	InstanceOpPack oppack{};
+	oppack.Destruct = true;
 	ExecuteOperation<Instance, MI_Instance, InstanceOpPack>(TheSession, oppack, MI_Operation_GetInstance, Function, forward<GetInstanceSessionFunctionArgs>(Args)...);
 	return oppack.Results;
 }
@@ -105,11 +112,12 @@ static vector<Instance> GetInstance(MI_Session* TheSession, GetInstanceSessionFu
 const bool CIMitar::TestConnection(MI_Session* TheSession) noexcept
 {
 	InstanceOpPack oppack{};
+	oppack.Destruct = true;
 	ExecuteOperation<Instance, MI_Instance, InstanceOpPack>(TheSession, oppack, MI_Operation_GetInstance, MI_Session_TestConnection, 0, nullptr);
 	return oppack.ResultCode == MI_RESULT_OK;
 }
 
-vector<Instance> CIMitar::GetAssociatedInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, const wstring& AssociatorClassName, const wstring& ResultClassName, const wstring& Role, const wstring& ResultRole, const bool KeysOnly, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+list<Instance> CIMitar::GetAssociatedInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, const wstring& AssociatorClassName, const wstring& ResultClassName, const wstring& Role, const wstring& ResultRole, const bool KeysOnly, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
 	return GetInstance(TheSession, MI_Session_AssociatorInstances, 0, nullptr, Namespace.c_str(),
 		SourceInstance, AssociatorClassName.c_str(), ResultClassName.c_str(), Role.c_str(),
@@ -119,24 +127,24 @@ vector<Instance> CIMitar::GetAssociatedInstance(MI_Session* TheSession, const ws
 Instance CIMitar::CreateInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
 	auto CreatedInstance{ GetInstance(TheSession, MI_Session_CreateInstance, 0, nullptr, Namespace.size() ? Namespace.c_str() : DefaultCIMNamespace, SourceInstance, nullptr) };
-	//if (CreatedInstance.size())
-	//{
-	return CreatedInstance[0];
-	//}
-	//else
-	//{
-	//	return;
-	//}
+	if (CreatedInstance.size())
+	{
+		return CreatedInstance.front();
+	}
+	else
+	{
+		return(Instance{ nullptr });
+	}
 }
 
-vector<Instance> CIMitar::DeleteInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+list<Instance> CIMitar::DeleteInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
 	return GetInstance(TheSession, MI_Session_DeleteInstance, 0, nullptr, Namespace.c_str(), SourceInstance, nullptr);
 }
 
-vector<Instance> CIMitar::ModifyInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+list<Instance> CIMitar::ModifyInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
-	return GetInstance(TheSession, MI_Session_DeleteInstance, 0, nullptr, Namespace.c_str(), SourceInstance, nullptr);
+	return GetInstance(TheSession, MI_Session_ModifyInstance, 0, nullptr, Namespace.c_str(), SourceInstance, nullptr);
 }
 
 // wrapped functions that generate operations //

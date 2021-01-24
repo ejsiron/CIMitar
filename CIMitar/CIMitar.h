@@ -381,14 +381,15 @@ namespace CIMitar
 	private:
 		std::unique_ptr<MI_Instance> ciminstance{ nullptr };
 		static Instance Clone(const MI_Instance& SourceInstance) noexcept;
+		bool destruct{ false };
 		std::list<Property> properties{};
 		friend class Session;
 	public:
-		Instance(const MI_Instance*) noexcept;
+		Instance(const MI_Instance*, const bool Destruct = false) noexcept;
 		Instance(const Instance&) noexcept;
 		Instance operator=(const Instance&) noexcept;
 		void swap(Instance& CopySource) noexcept;
-		virtual ~Instance();
+		~Instance();
 		static Instance Empty() noexcept;
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
@@ -426,9 +427,9 @@ namespace CIMitar
 		const bool TestConnection() noexcept;
 		Class GetClass(const std::wstring& Name) noexcept;
 		Class GetClass(const std::wstring& ClassName, const std::wstring& Name) noexcept;
-		std::vector<Class> GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept;
-		std::vector<Class> GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept;
-		std::vector<Class> GetClasses(const Class& SourceClass, const bool NameOnly = false) noexcept;
+		std::list<Class> GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept;
+		std::list<Class> GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept;
+		std::list<Class> GetClasses(const Class& SourceClass, const bool NameOnly = false) noexcept;
 		Instance NewInstance(const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const Instance& SourceInstance) noexcept;
@@ -605,14 +606,13 @@ namespace CIMitar
 	{
 	private:
 		std::unique_ptr<MI_Class> cimclass{ nullptr };
-		//Class(MI_ClassDecl* Declaration) noexcept;
 		friend class Session;
 	public:
 		Class(const MI_Class* SourceClass) noexcept;
 		void swap(Class&) noexcept;
 		Class(const Class&) noexcept;
 		Class& operator=(Class) noexcept;
-		virtual ~Class();
+		~Class();
 		const std::wstring Name() const noexcept;
 		const std::wstring Namespace() const noexcept;
 		const std::wstring ServerName() const noexcept;
@@ -635,42 +635,6 @@ namespace CIMitar
 	Session NewSession(const std::wstring ComputerName);
 	Session NewSession(const SessionOptions& Options);
 	Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
-
-	void SetDefaultNamespace(const std::wstring& Namespace);
-	const std::wstring& GetDefaultNamespace();
-	inline void ResetNamespace() { SetDefaultNamespace(DefaultCIMNamespace); }
-	void SetDefaultSession(Session& NewDefaultSession) noexcept;
-	Session& GetDefaultSession() noexcept;
-	Instance NewInstance(const std::wstring& ClassName) noexcept;
-	Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
-	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only instance; add an overload that accepts properties
-	std::list<Instance> GetInstance(std::wstring ClassName) noexcept;
-	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName) noexcept;
-	std::list<Instance> GetInstance(std::wstring ClassName, std::wstring Query) noexcept;
-	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName, std::wstring Query) noexcept;
-	const bool RemoveInstance(Instance& Instance);
-	const bool RemoveInstance(const std::wstring& Query);
-	const bool RemoveInstance(Session& Session, const std::wstring& Query);
-	std::list<Class> ListClasses(const std::wstring& Namespace = GetDefaultNamespace());
-	std::list<Class> ListClasses(const Session& Session, const std::wstring& Namespace = GetDefaultNamespace());
-
-	// TODO: ListClasses with parameter pack
-	Class GetClass(const std::wstring& Name);
-	Class GetClass(const std::wstring& Namespace, const std::wstring& Name);
-	// TODO: GetClass with parameter pack
-	const bool InvokeMethod(Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
-	const bool InvokeMethod(Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
-	const bool InvokeMethod(Session& Session, Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
-	const bool InvokeMethod(Session& Session, Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
-	// TODO: invoke parameter packs
-	const bool SubscribeEvent(const std::wstring& Query);
-	const bool SubscribeEvent(const std::wstring& Namespace, const std::wstring& Query);
-	const bool SubscribeEvent(Session& Session, const std::wstring& Query);
-	const bool SubscribeEvent(Session& Session, const std::wstring& Namespace, const std::wstring& Query);
-	// TODO: subscribe parameter packs
-	const bool TestConnection();
-	const bool TestConnection(Session& Session);
-	// TODO: test with callbacks
 
 	class Value
 	{
@@ -742,6 +706,42 @@ namespace CIMitar
 		const bool IsNull() const noexcept;
 		const bool IsArray() const noexcept;
 	};
+
+	void SetDefaultNamespace(const std::wstring& Namespace);
+	const std::wstring& GetDefaultNamespace();
+	inline void ResetNamespace() { SetDefaultNamespace(DefaultCIMNamespace); }
+	void SetDefaultSession(Session& NewDefaultSession) noexcept;
+	Session& GetDefaultSession() noexcept;
+	Instance NewInstance(const std::wstring& ClassName) noexcept;
+	Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
+	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only instance; add an overload that accepts properties
+	std::list<Instance> GetInstance(std::wstring ClassName) noexcept;
+	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName) noexcept;
+	std::list<Instance> GetInstance(std::wstring ClassName, std::wstring Query) noexcept;
+	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName, std::wstring Query) noexcept;
+	const bool RemoveInstance(Instance& Instance);
+	const bool RemoveInstance(const std::wstring& Query);
+	const bool RemoveInstance(Session& Session, const std::wstring& Query);
+	std::list<Class> ListClasses(const std::wstring& Namespace = GetDefaultNamespace());
+	std::list<Class> ListClasses(const Session& Session, const std::wstring& Namespace = GetDefaultNamespace());
+
+	// TODO: ListClasses with parameter pack
+	Class GetClass(const std::wstring& Name);
+	Class GetClass(const std::wstring& Namespace, const std::wstring& Name);
+	// TODO: GetClass with parameter pack
+	const bool InvokeMethod(Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	const bool InvokeMethod(Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	const bool InvokeMethod(Session& Session, Class& Class, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	const bool InvokeMethod(Session& Session, Instance& Instance, const std::wstring& MethodName, std::map<std::wstring, void*> Arguments);
+	// TODO: invoke parameter packs
+	const bool SubscribeEvent(const std::wstring& Query);
+	const bool SubscribeEvent(const std::wstring& Namespace, const std::wstring& Query);
+	const bool SubscribeEvent(Session& Session, const std::wstring& Query);
+	const bool SubscribeEvent(Session& Session, const std::wstring& Namespace, const std::wstring& Query);
+	// TODO: subscribe parameter packs
+	const bool TestConnection();
+	const bool TestConnection(Session& Session);
+	// TODO: test with callbacks
 }
 
 #endif CIMITAR_CIMITAR_H_INCLUDED

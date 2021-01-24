@@ -101,6 +101,7 @@ Class::~Class()
 {
 	if (!IsEmpty())
 	{
-		MI_Class_Delete(cimclass.get());
+		MI_Class* rawclass = cimclass.release();
+		MI_Class_Delete(rawclass);
 	}
 }

@@ -7,8 +7,6 @@
 #include <regex>
 #include <shared_mutex>
 
-#include <iostream>
-
 using namespace std;
 using namespace CIMitar;
 using namespace CIMitar::Formatters;
@@ -181,28 +179,28 @@ const bool Session::TestConnection() noexcept
 Class Session::GetClass(const std::wstring& ClassName) noexcept { return GetClass(GetDefaultNamespace(), ClassName); }
 Class Session::GetClass(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
 {
-	vector<Class> FoundClasses{ CIMitar::GetClass(TheSession.get(), Namespace, ClassName, nullptr, nullptr, nullptr) };
+	list<Class> FoundClasses{ CIMitar::GetClass(TheSession.get(), Namespace, ClassName, nullptr, nullptr, nullptr) };
 	if (FoundClasses.empty())
 	{
 		return Class{ static_cast<const MI_Class*>(nullptr) };
 	}
 	else
 	{
-		return FoundClasses[0];
+		return FoundClasses.front();
 	}
 }
 
-vector<Class> Session::GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept
+list<Class> Session::GetClasses(const std::wstring& Namespace, const bool NameOnly) noexcept
 {
 	return GetClasses(Namespace, L"", NameOnly);
 }
 
-vector<Class> Session::GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept
+list<Class> Session::GetClasses(const std::wstring& Namespace, const std::wstring& SourceClassName, const bool NameOnly) noexcept
 {
 	return EnumerateClasses(TheSession.get(), Namespace, SourceClassName, NameOnly, nullptr, nullptr, nullptr);
 }
 
-vector<Class> Session::GetClasses(const Class& SourceClass, const bool NameOnly) noexcept
+list<Class> Session::GetClasses(const Class& SourceClass, const bool NameOnly) noexcept
 {
 	return EnumerateClasses(TheSession.get(), SourceClass.Namespace(), SourceClass.Name(), NameOnly, nullptr, nullptr, nullptr);
 }

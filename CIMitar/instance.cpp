@@ -3,31 +3,14 @@
 using namespace CIMitar;
 using namespace std;
 
-void HeapInstanceDeleter(MI_Instance* instance)
-{
-	if (instance)
-	{
-		MI_Instance_Delete(instance);	// this usually makes big boom when it fails, nothing we can do about MI failures though
-	}
-}
-
-void StackDeleter(MI_Instance* instance)
-{
-	if (instance)
-	{
-		MI_Instance_Destruct(instance);
-	}
-}
-
 static unique_ptr<MI_Instance> CloneInstance(const MI_Instance* SourceInstance) noexcept
 {
 	MI_Instance* ClonedInstance;
 	MI_Instance_Clone(SourceInstance, &ClonedInstance);
-	unique_ptr<MI_Instance> x{ClonedInstance, HeapInstanceDeleter}
-	return unique_ptr<MI_Instance>{ClonedInstance, HeapInstanceDeleter};
+	return unique_ptr<MI_Instance>{ClonedInstance};
 }
 
-Instance::Instance(const MI_Instance* SourceInstance) noexcept
+Instance::Instance(const MI_Instance* SourceInstance, const bool Destruct) noexcept : destruct(Destruct)
 {
 	if (SourceInstance != nullptr)
 	{
@@ -44,7 +27,8 @@ Instance::Instance(const Instance& CopySource) noexcept
 {
 	if (CopySource.ciminstance != nullptr)
 	{
-		ciminstance = CloneInstance(CopySource.ciminstance.get());
+		destruct = CopySource.destruct;
+		ciminstance = unique_ptr<MI_Instance>(CloneInstance(CopySource.ciminstance.get()));
 	}
 }
 
@@ -59,6 +43,7 @@ Instance Instance::operator=(const Instance& CopySource) noexcept
 
 void Instance::swap(Instance& CopySource) noexcept
 {
+	std::swap(destruct, CopySource.destruct);
 	ciminstance.swap(CopySource.ciminstance);
 }
 
@@ -111,12 +96,12 @@ Instance::~Instance()
 {
 	if (ciminstance)
 	{
+		MI_Instance* rawinstance = ciminstance.release();
 		/***************************************************************/
 		// MI_Instance_Delete when created with : MI_Instance_Clone, MI_Application_NewInstance, MI_Context_NewInstance, MI_Context_NewDynamicInstance, MI_Context_NewParameters, and MI_Utilities_CimErrorFromErrorCode
 		// MI_Instance_Destruct for all other creation methods
-		// this class only uses MI_Instance_Clone
 		/***************************************************************/
-		MI_Instance_Delete(ciminstance.get());
+		destruct ? MI_Instance_Destruct(rawinstance) : MI_Instance_Delete(rawinstance);
 	}
 }
 
