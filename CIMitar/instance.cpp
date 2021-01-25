@@ -4,18 +4,34 @@
 using namespace CIMitar;
 using namespace std;
 
-static unique_ptr<MI_Instance> CloneInstance(const MI_Instance* SourceInstance) noexcept
+void DestroyDeleter(MI_Instance* instance)
+{
+	if (instance)
+	{
+		MI_Instance_Delete(instance);
+	}
+}
+
+void DestructDeleter(MI_Instance* instance)
+{
+	if (instance)
+	{
+		MI_Instance_Destruct(instance);
+	}
+}
+
+static unique_ptr<MI_Instance, void(*)(MI_Instance*)> CloneInstance(const MI_Instance* SourceInstance) noexcept
 {
 	MI_Instance* ClonedInstance;
 	MI_Instance_Clone(SourceInstance, &ClonedInstance);
-	return unique_ptr<MI_Instance>{ClonedInstance};
+	return unique_ptr<MI_Instance, void(*)(MI_Instance*)>{ClonedInstance, DestructDeleter};
 }
 
-Instance::Instance(const MI_Instance* SourceInstance, MI_Session* Owner, const bool Destruct) noexcept : destruct(Destruct), owner(Owner)
+Instance::Instance(const MI_Instance* SourceInstance, MI_Session* Owner) noexcept : owner(Owner)
 {
 	if (SourceInstance != nullptr)
 	{
-		ciminstance = unique_ptr<MI_Instance>(CloneInstance(SourceInstance));
+		ciminstance = CloneInstance(SourceInstance);
 	}
 }
 
@@ -28,24 +44,22 @@ Instance::Instance(const Instance& CopySource) noexcept
 {
 	if (CopySource.ciminstance != nullptr)
 	{
-		destruct = CopySource.destruct;
-		ciminstance = unique_ptr<MI_Instance>(CloneInstance(CopySource.ciminstance.get()));
+		owner = CopySource.owner;
+		ciminstance = CloneInstance(CopySource.ciminstance.get());
 	}
 }
 
 Instance Instance::operator=(const Instance& CopySource) noexcept
 {
-	if (this != &CopySource)
-	{
-		*this = CopySource;
-	}
+	Instance tmp{ CopySource };
+	swap(tmp);
 	return *this;
 }
 
-void Instance::swap(Instance& CopySource) noexcept
+void Instance::swap(Instance& SwapSource) noexcept
 {
-	std::swap(destruct, CopySource.destruct);
-	ciminstance.swap(CopySource.ciminstance);
+	ciminstance.swap(SwapSource.ciminstance);
+	std::swap(owner, SwapSource.owner);
 }
 
 Instance Instance::Empty() noexcept
@@ -94,30 +108,17 @@ const std::list<Property> Instance::Properties() noexcept
 }
 
 const bool Instance::Refresh() noexcept
-{	// this is crazy inefficient. the real work happens in MI_GetInstance which can't be avoided, so maybe it has no meaningful impact on performance
+{
 	if (owner && ciminstance && ciminstance->nameSpace)
 	{
 		auto ReturnedInstance{ Operation::GetInstance(owner, ciminstance->nameSpace, ciminstance.get(), nullptr, nullptr, nullptr) };
 		if (ReturnedInstance.ciminstance)
 		{
-			*this = move(ReturnedInstance);
+			swap(ReturnedInstance);
 			return true;
 		}
 	}
 	return false;
-}
-
-Instance::~Instance()
-{
-	if (ciminstance)
-	{
-		MI_Instance* rawinstance = ciminstance.release();
-		/***************************************************************/
-		// MI_Instance_Delete when created with : MI_Instance_Clone, MI_Application_NewInstance, MI_Context_NewInstance, MI_Context_NewDynamicInstance, MI_Context_NewParameters, and MI_Utilities_CimErrorFromErrorCode
-		// MI_Instance_Destruct for all other creation methods
-		/***************************************************************/
-		destruct ? MI_Instance_Destruct(rawinstance) : MI_Instance_Delete(rawinstance);
-	}
 }
 
 void CIMitar::swap(Instance& lhs, Instance& rhs) noexcept

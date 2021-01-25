@@ -57,11 +57,10 @@ public:
 class InstanceOpPack : public BaseOperationPack<MI_Instance, CIMitar::Instance>
 {
 public:
-	bool Destruct{ false };
 	using BaseOperationPack::BaseOperationPack;
 	void AddResult() noexcept
 	{
-		Results.emplace_back(pItem, session, Destruct);
+		Results.emplace_back(pItem, session);
 	}
 };
 
@@ -105,7 +104,6 @@ static list<Instance> GetInstance(MI_Session* TheSession, GetInstanceSessionFunc
 {
 	InstanceOpPack oppack{};
 	oppack.session = TheSession;
-	oppack.Destruct = true;
 	ExecuteOperation<Instance, MI_Instance, InstanceOpPack>(TheSession, oppack, MI_Operation_GetInstance, Function, forward<GetInstanceSessionFunctionArgs>(Args)...);
 	return oppack.Results;
 }
@@ -113,7 +111,6 @@ static list<Instance> GetInstance(MI_Session* TheSession, GetInstanceSessionFunc
 const bool Operation::TestConnection(MI_Session* TheSession) noexcept
 {
 	InstanceOpPack oppack{};
-	oppack.Destruct = true;
 	ExecuteOperation<Instance, MI_Instance, InstanceOpPack>(TheSession, oppack, MI_Operation_GetInstance, MI_Session_TestConnection, 0, nullptr);
 	return oppack.ResultCode == MI_RESULT_OK;
 }

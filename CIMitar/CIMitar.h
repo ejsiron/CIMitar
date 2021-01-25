@@ -379,18 +379,16 @@ namespace CIMitar
 	class Instance
 	{
 	private:
-		std::unique_ptr<MI_Instance> ciminstance{ nullptr };
+		std::unique_ptr<MI_Instance, void(*)(MI_Instance*)> ciminstance{ nullptr, nullptr };
 		static Instance Clone(const MI_Instance& SourceInstance, MI_Session* Owner) noexcept;
-		bool destruct{ false };
 		std::list<Property> properties{};
-		MI_Session* owner{ nullptr };
+		MI_Session* owner{ nullptr };	// TODO: convert to weak_ptr
 		friend class Session;
 	public:
-		Instance(const MI_Instance*, MI_Session* Owner = nullptr, const bool Destruct = false) noexcept;
+		Instance(const MI_Instance*, MI_Session* Owner = nullptr) noexcept;
 		Instance(const Instance&) noexcept;
 		Instance operator=(const Instance&) noexcept;
 		void swap(Instance& CopySource) noexcept;
-		~Instance();
 		static Instance Empty() noexcept;
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
