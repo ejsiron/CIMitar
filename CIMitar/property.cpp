@@ -2,6 +2,12 @@
 #include "value.h"
 
 using namespace CIMitar;
+using namespace std;
+
+const wstring& Property::Name() const noexcept
+{
+	return name;
+}
 
 const bool Property::IsNull() const noexcept
 {
@@ -16,3 +22,13 @@ const bool Property::IsArray() const noexcept
 Property::Property(const MI_Char* Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag) noexcept :
 	name(Name), cimvalue(Value, Type), cimtype(CIMTypeIDTranslator(Type)), memoryflag(MemoryFlag)
 {}
+
+const Value& Property::GetValue() const noexcept
+{
+	return cimvalue;
+}
+
+const CIMTypes Property::GetType() const noexcept
+{
+	return cimtype;
+}

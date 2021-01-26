@@ -170,10 +170,12 @@ class BaseVisitor
 private:
 	virtual const visitortype DefaultValue() const noexcept = 0;
 public:
-	virtual const visitortype& operator()(const visitortype& value) const noexcept sealed { return value; }
 	template <typename T>
-	const visitortype operator()(const T&) { return DefaultValue(); }
-	virtual ~BaseVisitor() = default;
+	typename enable_if_t<is_trivially_copyable_v<T>, const visitortype>
+		operator()(const T) { return DefaultValue(); }
+	template <typename T>
+	typename enable_if_t<!is_trivially_copyable_v<T>, const visitortype>
+		operator()(const T&) { return DefaultValue(); }
 };
 
 class BoolVisitor : public BaseVisitor<bool>
@@ -181,6 +183,7 @@ class BoolVisitor : public BaseVisitor<bool>
 private:
 	const bool DefaultValue() const noexcept { return false; }
 public:
+	const bool operator()(const bool b) const noexcept { return b; }
 	const bool operator()(const wchar_t ch) const noexcept { return !(ch == L'0' || ch == 0); }
 	const bool operator()(const wstring& str) const noexcept
 	{
@@ -200,32 +203,42 @@ public:
 	template <typename T>
 	typename enable_if_t<is_integral_v<T> || is_floating_point_v<T>, const bool>
 		operator()(const T& numeric) const noexcept { return numeric != 0; }
-	using BaseVisitor::operator();
+	template <typename T>
+	const bool operator()(const T) { return DefaultValue(); }
 };
 
-struct Char16Visitor :public BaseVisitor<wchar_t>
+class Char16Visitor :public BaseVisitor<wchar_t>
 {
 private:
 	const wchar_t DefaultValue() const noexcept { return L' '; }
 public:
 	template <typename T>
-	typename enable_if_t<is_integral_v<T> && sizeof(T) <= sizeof(wchar_t), const wchar_t>
+	typename enable_if_t<is_integral_v<T>, const wchar_t>
 		operator()(const T integral) const noexcept { return static_cast<wchar_t>(integral); }
 	const wchar_t operator()(const wstring& str) const noexcept { return str.size() ? str[0] : DefaultValue(); }
 	const wchar_t operator()(const vector<wstring>& strvec) const noexcept { return strvec.size() && strvec[0].size() ? strvec[0][0] : DefaultValue(); }
-	using BaseVisitor::operator();
+	template <typename T>
+	typename enable_if_t<is_trivially_copyable_v<T>, const bool>
+		operator()(const T) { return DefaultValue(); }
+	template <typename T>
+	typename enable_if_t<!is_trivially_copyable_v<T>, const bool>
+		operator()(const T&) { return DefaultValue(); }
 };
 
 class DateTimeVisitor :public BaseVisitor<DateTime>
 {
 private:
 	const DateTime DefaultValue() const noexcept { return DateTime{}; }
+public:
+	using BaseVisitor::operator();
 };
 
 class InstanceVisitor : public BaseVisitor<Instance>
 {
 private:
 	const Instance DefaultValue() const noexcept { return Instance::Empty(); }
+public:
+	using BaseVisitor::operator();
 };
 
 class StringVisitor : public BaseVisitor<wstring>
@@ -233,11 +246,17 @@ class StringVisitor : public BaseVisitor<wstring>
 private:
 	const wstring DefaultValue() const noexcept { return wstring{}; }
 public:
+	const wstring& operator()(const wstring& value) { return value; }
 	template <typename T>
-	typename enable_if_t<is_integral_v<T> && sizeof(T) <= sizeof(wchar_t), const wstring>
+	typename enable_if_t<is_integral_v<T>, const wstring>
 		operator()(const T integral) const noexcept { return to_wstring(integral); }
+	template <typename T>
+	typename enable_if_t<is_trivially_copyable_v<T>, const wstring>
+		operator()(const T) { return DefaultValue(); }
+	template <typename T>
+	typename enable_if_t<!is_trivially_copyable_v<T>, const wstring>
+		operator()(const T&) { return DefaultValue(); }
 	// TODO: string conversions
-	using BaseVisitor::operator();
 };
 
 template <typename T>
@@ -288,7 +307,7 @@ const bool Value::Boolean() const noexcept
 
 const vector<bool> Value::BooleanA() const noexcept
 {
-	return std::visit(BoolAVisitor{}, cimvalue);
+	return visit(BoolAVisitor{}, cimvalue);
 }
 
 const wchar_t Value::Char16() const noexcept

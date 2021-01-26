@@ -60,6 +60,8 @@ void Instance::swap(Instance& SwapSource) noexcept
 {
 	ciminstance.swap(SwapSource.ciminstance);
 	std::swap(owner, SwapSource.owner);
+	properties.clear();	// swaps are done more for copy-swap idiom than actual swapping, so it's ultimately cheaper to rebuild the properties as necessary than to swap lists each time
+	SwapSource.properties.clear();
 }
 
 Instance Instance::Empty() noexcept

@@ -705,8 +705,11 @@ namespace CIMitar
 		unsigned int memoryflag{ 0 };
 	public:
 		Property(const MI_Char* Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag) noexcept;
+		const std::wstring& Name() const noexcept;
 		const bool IsNull() const noexcept;
 		const bool IsArray() const noexcept;
+		const Value& GetValue() const noexcept;
+		const CIMTypes GetType() const noexcept;
 	};
 
 	void SetDefaultNamespace(const std::wstring& Namespace);
