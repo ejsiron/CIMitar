@@ -20,6 +20,11 @@ void Class::swap(Class& CopySource) noexcept
 	cimclass.swap(CopySource.cimclass);
 }
 
+void CIMitar::swap(Class& lhs, Class& rhs) noexcept
+{
+	lhs.swap(rhs);
+}
+
 Class::Class(const Class& CopySource) noexcept
 {
 	if (CopySource.cimclass != nullptr)

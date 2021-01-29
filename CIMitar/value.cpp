@@ -7,19 +7,6 @@
 using namespace std;
 using namespace CIMitar;
 
-static_assert(is_same_v<int, variant_alternative_t<0, CIMValueVariant>>);
-static_assert(is_same_v<long long, variant_alternative_t<1, CIMValueVariant>>);
-static_assert(is_same_v<wstring, variant_alternative_t<2, CIMValueVariant>>);
-static_assert(is_same_v<Instance, variant_alternative_t<3, CIMValueVariant>>);
-static_assert(is_same_v<Interval, variant_alternative_t<4, CIMValueVariant>>);
-static_assert(is_same_v<Timestamp, variant_alternative_t<5, CIMValueVariant>>);
-static_assert(is_same_v<vector<int>, variant_alternative_t<6, CIMValueVariant>>);
-static_assert(is_same_v<vector<long long>, variant_alternative_t<7, CIMValueVariant>>);
-static_assert(is_same_v<vector<wstring>, variant_alternative_t<8, CIMValueVariant>>);
-static_assert(is_same_v<vector<Instance>, variant_alternative_t<9, CIMValueVariant>>);
-static_assert(is_same_v<vector<Interval>, variant_alternative_t<10, CIMValueVariant>>);
-static_assert(is_same_v<vector<Timestamp>, variant_alternative_t<11, CIMValueVariant>>);
-
 const MI_Type CIMTypeIDTranslator(const CIMTypes Type) noexcept
 {
 	switch (Type)
@@ -90,6 +77,48 @@ const CIMTypes CIMTypeIDTranslator(const MI_Type Type) noexcept
 	}
 }
 
+#pragma region To standard int
+
+template <typename out_numeric, typename in_numeric>
+typename enable_if_t<(
+	(is_integral_v<out_numeric> || is_floating_point_v<out_numeric>) &&
+	(is_integral_v<in_numeric> || is_floating_point_v<in_numeric>) &&
+	!is_same_v<out_numeric, wchar_t>
+	), out_numeric>
+	to_stdint(in_numeric n)
+{
+	return n;
+}
+
+template <typename in_numeric>
+typename enable_if_t<(is_same_v<in_numeric, wchar_t>
+	), int>
+	to_stdint(in_numeric n)
+{
+	return std::to_wstring(n).at(0);
+}
+
+#pragma endregion To standard int
+
+template <typename in_numeric>
+typename enable_if_t<(
+	(is_integral_v<in_numeric> || is_floating_point_v<in_numeric>)
+	), wchar_t>
+	to_stdint(in_numeric n)
+{
+	return std::to_wstring(n).at(0);
+}
+
+template <typename in_numeric>
+typename enable_if_t<(
+	(is_integral_v<in_numeric> || is_floating_point_v<in_numeric>)
+	), wstring>
+	to_stdwstring(in_numeric n)
+{
+	return std::to_wstring(n);
+}
+
+
 template <typename outtype, typename MIType>
 vector<outtype> VectorizeMIArray(const MIType* SourceArray, unsigned int length) noexcept
 {
@@ -99,12 +128,7 @@ vector<outtype> VectorizeMIArray(const MIType* SourceArray, unsigned int length)
 	{
 		for (unsigned int i{ 0 }; i < length; ++i)
 		{
-			//if constexpr (is_trivially_constructible_v<outtype, MIType>)
-			//{
 			OutVector.emplace_back(SourceArray[i]);
-			//}
-			//else
-			//	OutVector.emplace_back(outtype{ SourceArray[i] });
 		}
 	}
 	catch (...) {}
