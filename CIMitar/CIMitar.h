@@ -148,6 +148,8 @@ namespace CIMitar
 		Ignore
 	};
 
+	class Timestamp; // forward declaration for Interval conversion
+
 	class Interval
 	{
 	public:
@@ -157,6 +159,7 @@ namespace CIMitar
 		unsigned int Seconds{ 0 };
 		unsigned int Microseconds{ 0 };
 		Interval() noexcept = default;
+		Interval(const Timestamp& timestamp) noexcept;
 		Interval(const MI_Datetime& MIDatetime) noexcept;
 		Interval(const MI_Interval& MIInterval) noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
@@ -178,6 +181,7 @@ namespace CIMitar
 		unsigned int Microseconds{ 0 };
 		int UTCOffset{ 0 };
 		Timestamp() noexcept = default;
+		Timestamp(const Interval&) noexcept;
 		Timestamp(const MI_Datetime& MIDatetime) noexcept;
 		Timestamp(const MI_Timestamp& MITimestamp) noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
@@ -638,35 +642,26 @@ namespace CIMitar
 	Session NewSession(const SessionOptions& Options);
 	Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 
+	using CIMValueVariant = std::variant<
+		std::byte[4],
+		std::byte[8],
+		std::wstring,
+		CIMitar::Instance,
+		CIMitar::Interval,
+		CIMitar::Timestamp,
+		std::vector<std::byte[4]>,
+		std::vector<std::byte[8]>,
+		std::vector<std::wstring>,
+		std::vector<CIMitar::Instance>,
+		std::vector<CIMitar::Interval>,
+		std::vector<CIMitar::Timestamp>
+	>;
+
 	class Value
 	{
 	private:
-		std::variant<
-			wchar_t,
-			unsigned int,
-			int,
-			unsigned long long,
-			long long,
-			float,
-			double,
-			CIMitar::Instance,
-			CIMitar::Interval,
-			CIMitar::Timestamp,
-			std::wstring,
-			std::vector<bool>,
-			std::vector<wchar_t>,
-			std::vector<unsigned int>,
-			std::vector<int>,
-			std::vector<unsigned long long>,
-			std::vector<long long>,
-			std::vector<float>,
-			std::vector<double>,
-			std::vector<CIMitar::Interval>,
-			std::vector<CIMitar::Timestamp>,
-			std::vector<std::wstring>,
-			std::vector<CIMitar::Instance>
-		>
-			cimvalue;
+
+		CIMValueVariant cimvalue;
 		CIMTypes cimtype;
 		bool isarray{ false };
 	public:
@@ -676,8 +671,10 @@ namespace CIMitar
 		const std::vector<bool> BooleanA() const noexcept;
 		const wchar_t Char16() const noexcept;
 		const std::vector<wchar_t> Char16A() const noexcept;
-		const DateTime DateTime() const noexcept;
-		const std::vector<CIMitar::DateTime> DateTimeA() const noexcept;
+		const Interval Interval() const noexcept;
+		const std::vector<CIMitar::Interval> IntervalA() const noexcept;
+		const Timestamp Timestamp() const noexcept;
+		const std::vector<CIMitar::Timestamp> TimestampA() const noexcept;
 		const Instance Instance() const noexcept;
 		const std::vector<CIMitar::Instance> InstanceA() const noexcept;
 		const float Real32() const noexcept;

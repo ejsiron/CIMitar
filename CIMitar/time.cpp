@@ -12,6 +12,15 @@ static constexpr void FromMI(Interval& cimint, const MI_Interval& miint)
 	cimint.Microseconds = miint.microseconds;
 }
 
+Interval::Interval(const Timestamp& timestamp) noexcept
+{
+	Days = timestamp.Day;
+	Hours = timestamp.Hour;
+	Minutes = timestamp.Minute;
+	Seconds = timestamp.Second;
+	Microseconds = timestamp.Microseconds;
+}
+
 Interval::Interval(const MI_Interval& MIInterval) noexcept
 {
 	FromMI(*this, MIInterval);
@@ -59,6 +68,15 @@ static constexpr void FromMI(Timestamp& cimts, const MI_Timestamp& mits)
 	cimts.Second = mits.second;
 	cimts.Microseconds = mits.microseconds;
 	cimts.UTCOffset = mits.utc;
+}
+
+Timestamp::Timestamp(const Interval& interval) noexcept
+{
+	Day = interval.Days;
+	Hour = interval.Hours;
+	Minute = interval.Minutes;
+	Second = interval.Seconds;
+	Microseconds = interval.Microseconds;
 }
 
 Timestamp::Timestamp(const MI_Datetime& Datetime) noexcept
