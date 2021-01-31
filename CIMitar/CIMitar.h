@@ -534,10 +534,14 @@ namespace CIMitar
 		Char16A,
 		DateTime,
 		DateTimeA,
+		Instance,
+		InstanceA,
 		Real32,
 		Real32A,
 		Real64,
 		Real64A,
+		Reference,
+		ReferenceA,
 		SInt8,
 		SInt8A,
 		SInt16,
@@ -642,7 +646,7 @@ namespace CIMitar
 	Session NewSession(const SessionOptions& Options);
 	Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 
-	using CIMValueVariant = std::variant<
+	using cimvaluevariant = std::variant<
 		int,
 		unsigned int,
 		long long,
@@ -661,22 +665,23 @@ namespace CIMitar
 		std::vector<float>,
 		std::vector<double>,
 		std::vector<wchar_t>,
-		std::vector<wstring>,
+		std::vector<std::wstring>,
 		std::vector<CIMitar::Instance>,
 		std::vector<CIMitar::Interval>,
 		std::vector<CIMitar::Timestamp>
-	>;
+	> ;
 
 	class Value
 	{
 	private:
-
-		CIMValueVariant cimvalue;
+		cimvaluevariant cimvalue;
 		CIMTypes cimtype;
 		bool isarray{ false };
+		bool isempty{ true };
 	public:
 		Value(MI_Value& Val, const MI_Type Type) noexcept;
 		const bool IsArray() const noexcept;
+		const bool IsEmpty() const noexcept;
 		const bool Boolean() const noexcept;
 		const std::vector<bool> BooleanA() const noexcept;
 		const wchar_t Char16() const noexcept;
@@ -695,12 +700,12 @@ namespace CIMitar
 		const std::vector<std::wstring> StringA() const noexcept;
 		const int SignedInt() const noexcept;
 		const std::vector<int> SignedIntA() const noexcept;
-		const long SignedInt64() const noexcept;
-		const std::vector<long> SignedInt64A() const noexcept;
+		const long long SignedInt64() const noexcept;
+		const std::vector<long long> SignedInt64A() const noexcept;
 		const unsigned int UnsignedInt() const noexcept;
 		const std::vector<unsigned int> UnsignedIntA() const noexcept;
-		const unsigned long UnsignedInt64() const noexcept;
-		const std::vector<unsigned long> UnsignedInt64A() const noexcept;
+		const unsigned long long UnsignedInt64() const noexcept;
+		const std::vector<unsigned long long> UnsignedInt64A() const noexcept;
 	};
 
 	class Property
