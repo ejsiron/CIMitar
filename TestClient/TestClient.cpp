@@ -16,6 +16,7 @@ int main()
 	CIMitar::Instance ErrorInstance{ sess.NewInstance(L"CIM_Error") };
 	for (auto& svc : sess.GetInstances(L"Win32_Service"))
 	{
+		wcout << svc.CimClass().Name() << endl;
 		for (auto const& prop : svc.Properties())
 		{
 			if (prop.Name() == L"Name")

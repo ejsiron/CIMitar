@@ -380,6 +380,35 @@ namespace CIMitar
 	class Property;
 	class PropertyDeclaration;
 
+	class Class
+	{
+	private:
+		std::unique_ptr<MI_Class> cimclass{ nullptr };
+		friend class Session;
+	public:
+		Class(const MI_Class* SourceClass) noexcept;
+		void swap(Class&) noexcept;
+		Class(const Class&) noexcept;
+		Class& operator=(Class) noexcept;
+		~Class();
+		const std::wstring Name() const noexcept;
+		const std::wstring Namespace() const noexcept;
+		const std::wstring ServerName() const noexcept;
+		const std::wstring OwningClassName() const noexcept;
+		const bool IsEmpty() const noexcept;
+		const bool IsStatic() const noexcept;
+		const bool IsDynamic() const noexcept;
+		const bool IsAssociation() const noexcept;
+		const bool IsIndication() const noexcept;
+		const bool IsAbstract() const noexcept;
+		const bool IsTerminal() const noexcept;
+		// qualifiers
+		// properties
+		// methods
+		// schema
+	};
+	void swap(Class&, Class&) noexcept;
+
 	class Instance
 	{
 	private:
@@ -387,6 +416,7 @@ namespace CIMitar
 		static Instance Clone(const MI_Instance& SourceInstance, MI_Session* Owner) noexcept;
 		std::list<Property> properties{};
 		MI_Session* owner{ nullptr };	// TODO: convert to weak_ptr
+		Class cimclass; // TODO: convert to weak_ptr
 		friend class Session;
 	public:
 		Instance(const MI_Instance*, MI_Session* Owner = nullptr) noexcept;
@@ -396,14 +426,12 @@ namespace CIMitar
 		static Instance Empty() noexcept;
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
-		unsigned int ElementCount() noexcept;
+		const Class& CimClass() const noexcept;
+		const unsigned int ElementCount() noexcept;
 		const std::list<Property> Properties() noexcept;
 		const bool Refresh() noexcept;
 	};
 	void swap(Instance& lhs, Instance& rhs) noexcept;
-
-	// forward declaration for use in class Session
-	class Class;
 
 	class Session
 	{
@@ -612,35 +640,6 @@ namespace CIMitar
 		void* value;
 	};
 
-	class Class
-	{
-	private:
-		std::unique_ptr<MI_Class> cimclass{ nullptr };
-		friend class Session;
-	public:
-		Class(const MI_Class* SourceClass) noexcept;
-		void swap(Class&) noexcept;
-		Class(const Class&) noexcept;
-		Class& operator=(Class) noexcept;
-		~Class();
-		const std::wstring Name() const noexcept;
-		const std::wstring Namespace() const noexcept;
-		const std::wstring ServerName() const noexcept;
-		const std::wstring OwningClassName() const noexcept;
-		const bool IsEmpty() const noexcept;
-		const bool IsStatic() const noexcept;
-		const bool IsDynamic() const noexcept;
-		const bool IsAssociation() const noexcept;
-		const bool IsIndication() const noexcept;
-		const bool IsAbstract() const noexcept;
-		const bool IsTerminal() const noexcept;
-		// qualifiers
-		// properties
-		// methods
-		// schema
-	};
-	void swap(Class&, Class&) noexcept;
-
 	Session NewSession();
 	Session NewSession(const std::wstring ComputerName);
 	Session NewSession(const SessionOptions& Options);
@@ -679,7 +678,7 @@ namespace CIMitar
 		bool isarray{ false };
 		bool isempty{ true };
 	public:
-		Value(MI_Value& Val, const MI_Type Type) noexcept;
+		Value(MI_Value& Val, const MI_Type Type, const bool Empty) noexcept;
 		const bool IsArray() const noexcept;
 		const bool IsEmpty() const noexcept;
 		const bool Boolean() const noexcept;

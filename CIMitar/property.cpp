@@ -20,7 +20,7 @@ const bool Property::IsArray() const noexcept
 }
 
 Property::Property(const MI_Char* Name, MI_Value& Value, MI_Type Type, MI_Uint32 MemoryFlag) noexcept :
-	name(Name), cimvalue(Value, Type), cimtype(CIMTypeIDTranslator(Type)), memoryflag(MemoryFlag)
+	name(Name), cimvalue(Value, Type, MI_FLAG_NULL& MemoryFlag), cimtype(CIMTypeIDTranslator(Type)), memoryflag(MemoryFlag)
 {}
 
 const Value& Property::GetValue() const noexcept

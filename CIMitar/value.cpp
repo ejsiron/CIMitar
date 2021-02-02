@@ -184,36 +184,22 @@ struct NumericVisitor
 	}
 };
 
-struct NumToCharVisitor
+struct CharVisitor
 {
 	template <typename in_num>
 	typename enable_if_t <is_arithmetic_v<in_num> && !is_same_v<wchar_t, in_num>, const wchar_t>
-		operator()(const in_num n) const noexcept
+		operator()(const in_num& n) const noexcept
 	{
 		return n ? L'1' : L'0';
 	}
+
+	template <typename in_value>
+	typename enable_if_t <!is_arithmetic_v<in_value> || is_same_v<wchar_t, in_value>, const wchar_t>
+		operator()(const in_value&) const noexcept
+	{
+		return DefaultWCHAR_T;
+	}
 };
-
-#pragma region To wchar_t
-
-// all numeric sources
-// to prevent non-printable artifacts in wchar_t, return '0' for a 0 value and '1' for everything else
-template <typename in_num>
-typename enable_if_t <is_arithmetic_v<in_num> || !is_same_v<wchar_t, in_num>, const wchar_t>
-to_stdwchar_t(const in_num n) noexcept
-{
-	return NumToCharVisitor{}(n);
-}
-
-// return a 'C' for all class types
-template <class in_value>
-typename enable_if_t<is_class_v<in_value>, const wchar_t>
-to_stdwchar_t(const in_value&)
-{
-	return L'C';
-}
-
-#pragma endregion
 
 struct StringVisitor
 {
@@ -255,7 +241,7 @@ template <class dt_out>
 struct DateTimeVisitor
 {
 	template<class dt_in>
-	typename enable_if_t<is_same_v<Interval, dt_in>&& is_same_v<Timestamp, dt_in>, const dt_out>
+	typename enable_if_t<is_same_v<Interval, dt_in> || is_same_v<Timestamp, dt_in>, const dt_out>
 		operator()(const dt_in& dt)
 	{
 		return dt;
@@ -295,10 +281,18 @@ vector<outtype> VectorizeMIArray(const MIType* SourceArray, unsigned int length)
 	return OutVector;
 }
 
-Value::Value(MI_Value& Val, const MI_Type Type) noexcept
+Value::Value(MI_Value& Val, const MI_Type Type, const bool Empty) noexcept
 {
 	cimtype = CIMTypeIDTranslator(Type);
 	auto length{ Type & MI_ARRAY ? Val.array.size : 0 };
+	if (Empty)
+	{
+		return;
+	}
+	else
+	{
+		isempty = false;
+	}
 	// This portion could throw if provided a malformed Val.
 	// All Vals should come from an MI provider
 	switch (Type)
@@ -356,108 +350,101 @@ Value::Value(MI_Value& Val, const MI_Type Type) noexcept
 	}
 }
 
-//template <typename T, typename UnitConverter>
-//class BaseVisitorArray
-//{
-//private:
-//	UnitConverter Transformer{};
-//	static vector<T> NewEmpty(const size_t size)
-//	{
-//		auto ne{ vector<T>() };
-//		ne.reserve(size);
-//		return ne;
-//	}
-//	const vector<T> DefaultValue() const noexcept
-//	{
-//		return NewEmpty(0);
-//	}
-//public:
-//	const vector<T>& operator()(const vector<T>& v) const noexcept { return v; }
-//	template <typename Input>
-//	const vector<T> operator()(const vector<Input>& sv) const noexcept
-//	{
-//		auto ov{ NewEmpty(sv.size()) };
-//		transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
-//		return ov;
-//	}
-//	template <typename Input>
-//	typename enable_if_t<is_trivially_constructible_v<Input>, const vector<T>>
-//		operator()(const Input) const noexcept { return DefaultValue(); }
-//	template <typename Input>
-//	typename enable_if_t<!is_trivially_constructible_v<Input>, const vector<T>>
-//		operator()(const Input&) const noexcept { return DefaultValue(); }
-//	virtual ~BaseVisitorArray() = default;
-//};
-//
-//class BoolAVisitor :public BaseVisitorArray<bool, NumericVisitor<const bool>> {};
-//class Char16AVisitor :public BaseVisitorArray<wchar_t, CharVisitor> {};
-//class IntervalAVisitor :public BaseVisitorArray<Interval, DateTimeVisitor<Interval>> {};
-//class TimestampAVisitor :public BaseVisitorArray<Timestamp, DateTimeVisitor<Timestamp>> {};
-//template <typename T>
-//class NumericAVisitor :public BaseVisitorArray<T, NumericVisitor<const T>> {};
-//class StringAVisitor :public BaseVisitorArray<wstring, StringVisitor> {};
+template <typename T, typename UnitConverter>
+class BaseVisitorArray
+{
+private:
+	UnitConverter Transformer{};
+	static vector<T> NewEmpty(const size_t size)
+	{
+		auto ne{ vector<T>() };
+		ne.reserve(size);
+		return ne;
+	}
+	const vector<T> DefaultValue() const noexcept
+	{
+		return NewEmpty(0);
+	}
+public:
+	template <typename Input>
+	const vector<T> operator()(const vector<Input>& sv) const noexcept
+	{
+		auto ov{ NewEmpty(sv.size()) };
+		transform(sv.begin(), sv.end(), back_inserter(ov), Transformer);
+		return ov;
+	}
+	template <typename Input>
+	typename enable_if_t<is_arithmetic_v<Input>, const vector<T>>
+		operator()(const Input&) const noexcept { return DefaultValue(); }
+	template <typename Input>
+	typename enable_if_t<is_class_v<Input>, const vector<T>>
+		operator()(const Input&) const noexcept { return DefaultValue(); }
+	virtual ~BaseVisitorArray() = default;
+};
+
+class BoolAVisitor :public BaseVisitorArray<bool, NumericVisitor<bool>> {};
+class Char16AVisitor :public BaseVisitorArray<wchar_t, CharVisitor> {};
+class IntervalAVisitor :public BaseVisitorArray<Interval, DateTimeVisitor<Interval>> {};
+class TimestampAVisitor :public BaseVisitorArray<Timestamp, DateTimeVisitor<Timestamp>> {};
+template <typename T>
+class NumericAVisitor :public BaseVisitorArray<T, NumericVisitor<const T>> {};
+class StringAVisitor :public BaseVisitorArray<wstring, StringVisitor> {};
 
 const bool Value::Boolean() const noexcept
 {
 	return visit(NumericVisitor<bool>{}, cimvalue);
 }
 
-//const vector<bool> Value::BooleanA() const noexcept
-//{
-//	//return visit(BoolAVisitor{}, cimvalue);
-//}
+const vector<bool> Value::BooleanA() const noexcept
+{
+	return visit(BoolAVisitor{}, cimvalue);
+}
 
 const wchar_t Value::Char16() const noexcept
 {
 	switch (cimtype)
 	{
 	case CIMTypes::Char16: return std::get<wchar_t>(cimvalue);
-	case CIMTypes::Boolean: [[fallthrough]];
-	case CIMTypes::Real32: [[fallthrough]];
-	case CIMTypes::Real64: [[fallthrough]];
-	case CIMTypes::SInt8: [[fallthrough]];
-	case CIMTypes::SInt16: [[fallthrough]];
-	case CIMTypes::SInt32: [[fallthrough]];
-	case CIMTypes::SInt64: [[fallthrough]];
-	case CIMTypes::UInt8: [[fallthrough]];
-	case CIMTypes::UInt16: [[fallthrough]];
-	case CIMTypes::UInt32: [[fallthrough]];
-	case CIMTypes::UInt64:
-		return visit(NumToCharVisitor{}, cimvalue);
 	case CIMTypes::String:
 	{
 		auto str{ get<wstring>(cimvalue) };
 		return str.size() ? str[0] : DefaultWCHAR_T;
 	}
 	default:
-		return DefaultWCHAR_T;
+		return visit(CharVisitor{}, cimvalue);
 	}
 }
 
-//const vector<wchar_t> Value::Char16A() const noexcept
-//{
-//	return visit(Char16AVisitor{}, cimvalue);
-//}
+const vector<wchar_t> Value::Char16A() const noexcept
+{
+	switch (cimtype)
+	{
+	case CIMTypes::Char16A:
+		return std::get<vector<wchar_t>>(cimvalue);
+	default:
+		return visit(Char16AVisitor{}, cimvalue);
+	}
+}
 
-//const Interval Value::Interval() const noexcept
-//{
-//	return visit(DateTimeVisitor<CIMitar::Interval>{}, cimvalue);
-//}
+const Interval Value::Interval() const noexcept
+{
+	return visit(DateTimeVisitor<CIMitar::Interval>{}, cimvalue);
+}
 
-//const vector<Interval> Value::IntervalA() const noexcept
-//{
-//	return visit(IntervalAVisitor{}, cimvalue);
-//}
+const vector<Interval> Value::IntervalA() const noexcept
+{
+	return visit(IntervalAVisitor{}, cimvalue);
+}
 
-//const Timestamp Value::Timestamp() const noexcept
-//{
-//	return visit(DateTimeVisitor<CIMitar::Timestamp>{}, cimvalue);
-//}
+const Timestamp Value::Timestamp() const noexcept
+{
+	return visit(DateTimeVisitor<CIMitar::Timestamp>{}, cimvalue);
+}
 
-//const vector<Timestamp> Value::TimestampA() const noexcept
-//{
-//	return visit(TimestampAVisitor{}, cimvalue);
-//}
+const vector<Timestamp> Value::TimestampA() const noexcept
+{
+	return visit(TimestampAVisitor{}, cimvalue);
+}
 
 const float Value::Real32() const noexcept
 {
@@ -478,12 +465,12 @@ const float Value::Real32() const noexcept
 		return visit(NumericVisitor<float>{}, cimvalue);
 	}
 }
-//
-//const vector<float> Value::Real32A() const noexcept
-//{
-//	return visit(NumericAVisitor<float>{}, cimvalue);
-//}
-//
+
+const vector<float> Value::Real32A() const noexcept
+{
+	return visit(NumericAVisitor<float>{}, cimvalue);
+}
+
 const double Value::Real64() const noexcept
 {
 	switch (cimtype)
@@ -503,12 +490,12 @@ const double Value::Real64() const noexcept
 		return visit(NumericVisitor<double>{}, cimvalue);
 	}
 }
-//
-//const vector<double> Value::Real64A() const noexcept
-//{
-//	return visit(NumericAVisitor<double>{}, cimvalue);
-//}
-//
+
+const vector<double> Value::Real64A() const noexcept
+{
+	return visit(NumericAVisitor<double>{}, cimvalue);
+}
+
 const int Value::SignedInt() const noexcept
 {
 	switch (cimtype)
@@ -516,7 +503,7 @@ const int Value::SignedInt() const noexcept
 	case CIMTypes::SInt8: [[fallthrough]];
 	case CIMTypes::SInt16: [[fallthrough]];
 	case CIMTypes::SInt32:
-		return std::get<double>(cimvalue);
+		return std::get<int>(cimvalue);
 	case CIMTypes::String:
 	{
 		auto str{ get<wstring>(cimvalue) };
@@ -533,12 +520,12 @@ const int Value::SignedInt() const noexcept
 		return visit(NumericVisitor<int>{}, cimvalue);
 	}
 }
-//
-//const vector<int> Value::SignedIntA() const noexcept
-//{
-//	return visit(NumericAVisitor<int>{}, cimvalue);
-//}
-//
+
+const vector<int> Value::SignedIntA() const noexcept
+{
+	return visit(NumericAVisitor<int>{}, cimvalue);
+}
+
 const long long Value::SignedInt64() const noexcept
 {
 	switch (cimtype)
@@ -555,15 +542,15 @@ const long long Value::SignedInt64() const noexcept
 		return int64array.size() ? int64array[0] : 0;
 	}
 	default:
-		return visit(NumericVisitor<double>{}, cimvalue);
+		return visit(NumericVisitor<long long>{}, cimvalue);
 	}
 }
-//
-//const std::vector<long long> Value::SignedInt64A() const noexcept
-//{
-//	return visit(NumericAVisitor<long>{}, cimvalue);
-//}
-//
+
+const std::vector<long long> Value::SignedInt64A() const noexcept
+{
+	return visit(NumericAVisitor<long long>{}, cimvalue);
+}
+
 const wstring Value::String() const noexcept
 {
 	switch (cimtype)
@@ -586,30 +573,65 @@ const wstring Value::String() const noexcept
 		return DefaultWSTRING;
 	}
 }
-//
-//const vector<wstring> Value::StringA() const noexcept
-//{
-//	return visit(StringAVisitor{}, cimvalue);
-//}
-//
+
+const vector<wstring> Value::StringA() const noexcept
+{
+	return visit(StringAVisitor{}, cimvalue);
+}
+
 const unsigned int Value::UnsignedInt() const noexcept
 {
-	return visit(NumericVisitor<const unsigned int>{}, cimvalue);
+	switch (cimtype)
+	{
+	case CIMTypes::UInt8: [[fallthrough]];
+	case CIMTypes::UInt16: [[fallthrough]];
+	case CIMTypes::UInt32:
+		return std::get<unsigned int>(cimvalue);
+	case CIMTypes::String:
+	{
+		auto str{ get<wstring>(cimvalue) };
+		return wcstoul(str.c_str(), nullptr, 10);
+	}
+	case CIMTypes::SInt8A: [[fallthrough]];
+	case CIMTypes::SInt16A: [[fallthrough]];
+	case CIMTypes::SInt32A:
+	{
+		auto uintarray{ get<vector<unsigned int>>(cimvalue) };
+		return uintarray.size() ? uintarray[0] : 0;
+	}
+	default:
+		return visit(NumericVisitor<unsigned int>{}, cimvalue);
+	}
 }
-//
-//const vector<unsigned int> Value::UnsignedIntA() const noexcept
-//{
-//	return visit(NumericAVisitor<unsigned int>{}, cimvalue);
-//}
-//
+
+const vector<unsigned int> Value::UnsignedIntA() const noexcept
+{
+	return visit(NumericAVisitor<unsigned int>{}, cimvalue);
+}
+
 const unsigned long long Value::UnsignedInt64() const noexcept
 {
-	return visit(NumericVisitor<const unsigned long>{}, cimvalue);
+	switch (cimtype)
+	{
+	case CIMTypes::UInt64:	return std::get<unsigned long long>(cimvalue);
+	case CIMTypes::String:
+	{
+		auto str{ get<wstring>(cimvalue) };
+		return wcstoull(str.c_str(), nullptr, 10);
+	}
+	case CIMTypes::UInt64A:
+	{
+		auto uint64array{ get<vector<unsigned long long>>(cimvalue) };
+		return uint64array.size() ? uint64array[0] : 0;
+	}
+	default:
+		return visit(NumericVisitor<unsigned long long>{}, cimvalue);
+	}
 }
-//
-//const vector<unsigned long long> Value::UnsignedInt64A() const noexcept
-//{
-//	return visit(NumericAVisitor<unsigned long>{}, cimvalue);
-//}
+
+const vector<unsigned long long> Value::UnsignedInt64A() const noexcept
+{
+	return visit(NumericAVisitor<unsigned long long>{}, cimvalue);
+}
 
 #pragma warning(pop)
