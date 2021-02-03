@@ -366,6 +366,7 @@ private:
 		return NewEmpty(0);
 	}
 public:
+	static const vector<T> Empty() noexcept { return NewEmpty(0); }
 	template <typename Input>
 	const vector<T> operator()(const vector<Input>& sv) const noexcept
 	{
@@ -392,16 +393,19 @@ class StringAVisitor :public BaseVisitorArray<wstring, StringVisitor> {};
 
 const bool Value::Boolean() const noexcept
 {
+	if (isempty) { return false; }
 	return visit(NumericVisitor<bool>{}, cimvalue);
 }
 
 const vector<bool> Value::BooleanA() const noexcept
 {
+	if (isempty) { return BoolAVisitor::Empty(); }
 	return visit(BoolAVisitor{}, cimvalue);
 }
 
 const wchar_t Value::Char16() const noexcept
 {
+	if (isempty) { return DefaultWCHAR_T; }
 	switch (cimtype)
 	{
 	case CIMTypes::Char16: return std::get<wchar_t>(cimvalue);
@@ -417,6 +421,7 @@ const wchar_t Value::Char16() const noexcept
 
 const vector<wchar_t> Value::Char16A() const noexcept
 {
+	if (isempty) { return Char16AVisitor::Empty(); }
 	switch (cimtype)
 	{
 	case CIMTypes::Char16A:
@@ -428,26 +433,31 @@ const vector<wchar_t> Value::Char16A() const noexcept
 
 const Interval Value::Interval() const noexcept
 {
+	if (isempty) { return CIMitar::Interval{}; }
 	return visit(DateTimeVisitor<CIMitar::Interval>{}, cimvalue);
 }
 
 const vector<Interval> Value::IntervalA() const noexcept
 {
+	if (isempty) { return IntervalAVisitor::Empty(); }
 	return visit(IntervalAVisitor{}, cimvalue);
 }
 
 const Timestamp Value::Timestamp() const noexcept
 {
+	if (isempty) { return CIMitar::Timestamp{}; }
 	return visit(DateTimeVisitor<CIMitar::Timestamp>{}, cimvalue);
 }
 
 const vector<Timestamp> Value::TimestampA() const noexcept
 {
+	if (isempty) { return TimestampAVisitor::Empty(); }
 	return visit(TimestampAVisitor{}, cimvalue);
 }
 
 const float Value::Real32() const noexcept
 {
+	if (isempty) { return 0; }
 	switch (cimtype)
 	{
 	case CIMTypes::Real32:	return std::get<float>(cimvalue);
@@ -468,11 +478,13 @@ const float Value::Real32() const noexcept
 
 const vector<float> Value::Real32A() const noexcept
 {
+	if (isempty) { return NumericAVisitor<float>::Empty(); }
 	return visit(NumericAVisitor<float>{}, cimvalue);
 }
 
 const double Value::Real64() const noexcept
 {
+	if (isempty) { return 0; }
 	switch (cimtype)
 	{
 	case CIMTypes::Real64:	return std::get<double>(cimvalue);
@@ -493,11 +505,13 @@ const double Value::Real64() const noexcept
 
 const vector<double> Value::Real64A() const noexcept
 {
+	if (isempty) { return NumericAVisitor <double>::Empty(); }
 	return visit(NumericAVisitor<double>{}, cimvalue);
 }
 
 const int Value::SignedInt() const noexcept
 {
+	if (isempty) { return 0; }
 	switch (cimtype)
 	{
 	case CIMTypes::SInt8: [[fallthrough]];
@@ -523,11 +537,13 @@ const int Value::SignedInt() const noexcept
 
 const vector<int> Value::SignedIntA() const noexcept
 {
+	if (isempty) { return NumericAVisitor<int>::Empty(); }
 	return visit(NumericAVisitor<int>{}, cimvalue);
 }
 
 const long long Value::SignedInt64() const noexcept
 {
+	if (isempty) { return 0; }
 	switch (cimtype)
 	{
 	case CIMTypes::SInt64:	return std::get<long long>(cimvalue);
@@ -548,11 +564,13 @@ const long long Value::SignedInt64() const noexcept
 
 const std::vector<long long> Value::SignedInt64A() const noexcept
 {
+	if (isempty) { return NumericAVisitor<long long>::Empty(); }
 	return visit(NumericAVisitor<long long>{}, cimvalue);
 }
 
 const wstring Value::String() const noexcept
 {
+	if (isempty) { return DefaultWSTRING; }
 	switch (cimtype)
 	{
 	case CIMTypes::String: return std::get<wstring>(cimvalue);
@@ -576,11 +594,13 @@ const wstring Value::String() const noexcept
 
 const vector<wstring> Value::StringA() const noexcept
 {
+	if (isempty) { return StringAVisitor::Empty(); }
 	return visit(StringAVisitor{}, cimvalue);
 }
 
 const unsigned int Value::UnsignedInt() const noexcept
 {
+	if (isempty) { return 0; }
 	switch (cimtype)
 	{
 	case CIMTypes::UInt8: [[fallthrough]];
@@ -606,11 +626,13 @@ const unsigned int Value::UnsignedInt() const noexcept
 
 const vector<unsigned int> Value::UnsignedIntA() const noexcept
 {
+	if (isempty) { return NumericAVisitor<unsigned int>::Empty(); }
 	return visit(NumericAVisitor<unsigned int>{}, cimvalue);
 }
 
 const unsigned long long Value::UnsignedInt64() const noexcept
 {
+	if (isempty) { return 0; }
 	switch (cimtype)
 	{
 	case CIMTypes::UInt64:	return std::get<unsigned long long>(cimvalue);
@@ -631,6 +653,7 @@ const unsigned long long Value::UnsignedInt64() const noexcept
 
 const vector<unsigned long long> Value::UnsignedInt64A() const noexcept
 {
+	if (isempty) { return NumericAVisitor<unsigned long long>::Empty(); }
 	return visit(NumericAVisitor<unsigned long long>{}, cimvalue);
 }
 

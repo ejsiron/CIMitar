@@ -416,7 +416,7 @@ namespace CIMitar
 		static Instance Clone(const MI_Instance& SourceInstance, MI_Session* Owner) noexcept;
 		std::list<Property> properties{};
 		MI_Session* owner{ nullptr };	// TODO: convert to weak_ptr
-		Class cimclass; // TODO: convert to weak_ptr
+		std::unique_ptr<Class> cimclass{ nullptr };
 		friend class Session;
 	public:
 		Instance(const MI_Instance*, MI_Session* Owner = nullptr) noexcept;
@@ -426,7 +426,7 @@ namespace CIMitar
 		static Instance Empty() noexcept;
 		const std::wstring ServerName() const noexcept;
 		const std::wstring Namespace() const noexcept;
-		const Class& CimClass() const noexcept;
+		const Class& CimClass() noexcept;
 		const unsigned int ElementCount() noexcept;
 		const std::list<Property> Properties() noexcept;
 		const bool Refresh() noexcept;

@@ -29,14 +29,11 @@ static unique_ptr<MI_Instance, void(*)(MI_Instance*)> CloneInstance(const MI_Ins
 
 Instance::Instance(const MI_Instance* SourceInstance, MI_Session* Owner) noexcept : owner(Owner)
 {
-	MI_Class* instanceclass{ nullptr };
 	if (SourceInstance != nullptr)
 	{
 		ciminstance = CloneInstance(SourceInstance);
 		owner = Owner;
-		MI_Instance_GetClass(ciminstance.get(), &instanceclass);
 	}
-	cimclass = Class(instanceclass);
 }
 
 Instance Instance::Clone(const MI_Instance& SourceInstance, MI_Session* Owner) noexcept
@@ -50,7 +47,6 @@ Instance::Instance(const Instance& CopySource) noexcept
 	{
 		owner = CopySource.owner;
 		ciminstance = CloneInstance(CopySource.ciminstance.get());
-		cimclass = CopySource.cimclass;
 	}
 }
 
@@ -91,9 +87,15 @@ const unsigned int Instance::ElementCount() noexcept
 	return count;
 }
 
-const Class& Instance::CimClass() const noexcept
+const Class& Instance::CimClass() noexcept
 {
-	return cimclass;
+	if (cimclass == nullptr)
+	{
+		MI_Class* instanceclass{ nullptr };
+		MI_Instance_GetClass(ciminstance.get(), &instanceclass);
+		cimclass = make_unique<Class>(Class{ instanceclass });
+	}
+	return *cimclass;
 }
 
 const std::list<Property> Instance::Properties() noexcept
