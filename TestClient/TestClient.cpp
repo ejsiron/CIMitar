@@ -3,7 +3,7 @@
 
 #include <Windows.h>
 #include <iostream>
-#include "..\CIMitar\CIMitar.h"
+#include "..\CIMitar\CIMitar.hpp"
 using namespace std;
 
 int main()
@@ -15,17 +15,14 @@ int main()
 	wcout << L"Class server name: " << x.ServerName() << std::endl;
 	wcout << L"Owning class name: " << x.OwningClassName() << std::endl;
 	CIMitar::Instance ErrorInstance{ sess.NewInstance(L"CIM_Error") };
-	while (true)
+	for (auto& svc : sess.GetInstances(L"Win32_Service"))
 	{
-		for (auto& svc : sess.GetInstances(L"Win32_Service"))
+		wcout << svc.CimClass().Name() << endl;
+		for (auto const& prop : svc.Properties())
 		{
-			wcout << svc.CimClass().Name() << endl;
-			for (auto const& prop : svc.Properties())
-			{
-				if (prop.Name() == L"Name")
-					wcout << L"Property: " << prop.Name() << L" | Value: " << prop.GetValue().String() << endl;
-			}
-			wcout.flush();
+			if (prop.Name() == L"Name")
+				wcout << L"Property: " << prop.Name() << L" | Value: " << prop.GetValue().String() << endl;
 		}
+		wcout.flush();
 	}
 }

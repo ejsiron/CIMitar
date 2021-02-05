@@ -152,18 +152,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="appinit.h" />
-    <ClInclude Include="CIMitar.h" />
-    <ClInclude Include="errorhandler.h" />
-    <ClInclude Include="guidformatters.h" />
-    <ClInclude Include="instance.h" />
-    <ClInclude Include="localaddresses.h" />
-    <ClInclude Include="operation.h" />
-    <ClInclude Include="property.h" />
-    <ClInclude Include="stringformatters.h" />
+    <ClInclude Include="appinit.hpp" />
+    <ClInclude Include="CIMitar.hpp" />
+    <ClInclude Include="errorhandler.hpp" />
+    <ClInclude Include="guidformatters.hpp" />
+    <ClInclude Include="instance.hpp" />
+    <ClInclude Include="localaddresses.hpp" />
+    <ClInclude Include="operation.hpp" />
+    <ClInclude Include="stringformatters.hpp" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="utility.h" />
-    <ClInclude Include="value.h" />
+    <ClInclude Include="utility.hpp" />
+    <ClInclude Include="value.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="activity.cpp" />
@@ -177,7 +176,6 @@
     <ClCompile Include="time.cpp" />
     <ClCompile Include="session.cpp" />
     <ClCompile Include="errorhandler.cpp" />
-    <ClCompile Include="exceptions.cpp" />
     <ClCompile Include="formatters.cpp" />
     <ClCompile Include="instance.cpp" />
     <ClCompile Include="usercredentials.cpp" />

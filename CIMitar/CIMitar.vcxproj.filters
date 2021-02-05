@@ -15,47 +15,41 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CIMitar.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="appinit.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="errorhandler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="guidformatters.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instance.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="localaddresses.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="operation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stringformatters.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utility.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="value.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CIMitar.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stringformatters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="guidformatters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="errorhandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="instance.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="localaddresses.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="appinit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="operation.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="property.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="value.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="exceptions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="formatters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
