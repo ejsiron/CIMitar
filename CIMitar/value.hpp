@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mi.h>
-#include "CIMitar.h"
+#include "CIMitar.hpp"
 
 #ifndef CIMITAR_VALUE_H_INCLUDED
 #define CIMITAR_VALUE_H_INCLUDED

@@ -1,6 +1,6 @@
 #include <string>
-#include "CIMitar.h"
-#include "errorhandler.h"
+#include "CIMitar.hpp"
+#include "errorhandler.hpp"
 //
 //void CIMitar::ProcessCIMResult(MI_Result CIMResult, CIMitarOps::OperationCodes CIMitarOperation, const wchar_t* MoreDetails)
 //{

@@ -1,5 +1,5 @@
-#include "CIMitar.h"
-#include "operation.h"
+#include "CIMitar.hpp"
+#include "operation.hpp"
 
 using namespace CIMitar;
 using namespace std;

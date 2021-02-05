@@ -1,8 +1,8 @@
-#include "CIMitar.h"
-#include "appinit.h"
-#include "localaddresses.h"
-#include "operation.h"
-#include "stringformatters.h"
+#include "CIMitar.hpp"
+#include "appinit.hpp"
+#include "localaddresses.hpp"
+#include "operation.hpp"
+#include "stringformatters.hpp"
 #include <mutex>
 #include <regex>
 #include <shared_mutex>

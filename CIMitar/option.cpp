@@ -1,4 +1,4 @@
-#include "CIMitar.h"
+#include "CIMitar.hpp"
 
 using namespace CIMitar;
 using namespace std;

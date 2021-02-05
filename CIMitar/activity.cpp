@@ -1,4 +1,4 @@
-#include "CIMitar.h"
+#include "CIMitar.hpp"
 #include <array>
 #include <string>
 

@@ -41,6 +41,7 @@ In general, anything not listed above does not work. However, some portions have
 * Username and password functionality
 * Non-default operational options
 * Queries and filtered item retrieval
+* Error handling,tracking, and reporting
 
 ## Future Direction
 

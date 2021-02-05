@@ -1,4 +1,4 @@
-#include "CIMitar.h"
+#include "CIMitar.hpp"
 #include <timezoneapi.h>
 
 using namespace CIMitar;

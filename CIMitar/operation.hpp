@@ -1,7 +1,7 @@
 #pragma once
 #ifndef CIMITAR_OPERATION_H_INCLUDED
 #define CIMITAR_OPERATION_H_INCLUDED
-#include "CIMitar.h"
+#include "CIMitar.hpp"
 
 namespace CIMitar::Operation
 {

@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
-#include "localaddresses.h"
+#include "localaddresses.hpp"
 
 #pragma comment(lib, "iphlpapi.lib") // *UnicastIpAddress* and *Mib* functions
 #pragma comment (lib, "Ws2_32.lib")	// INetNtop function

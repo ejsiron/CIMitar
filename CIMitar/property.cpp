@@ -1,5 +1,5 @@
-#include "CIMitar.h"
-#include "value.h"
+#include "CIMitar.hpp"
+#include "value.hpp"
 
 using namespace CIMitar;
 using namespace std;

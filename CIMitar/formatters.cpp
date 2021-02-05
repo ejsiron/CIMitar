@@ -1,8 +1,7 @@
-#include "guidformatters.h"
-#include "stringformatters.h"
+#include "guidformatters.hpp"
+#include "stringformatters.hpp"
 #include <iomanip>
 #include <sstream>
-
 
 std::wstring CIMitar::Formatters::UpperCaseString(const std::wstring& InputString)
 {
@@ -80,7 +79,7 @@ std::wstring CIMitar::Formatters::NewStringFromGUID(GUID* Guid, const bool Hyphe
 	{
 		GUID EmptyGuid{ 0 };
 		Guid = &EmptyGuid;
-		if(CoCreateGuid(Guid) != S_OK)
+		if (CoCreateGuid(Guid) != S_OK)
 			ClearGuid(Guid);
 	}
 	std::wstring GroupBreak{ (Hyphenate ? L"-" : L"") };

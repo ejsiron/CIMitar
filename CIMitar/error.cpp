@@ -1,7 +1,7 @@
 #pragma once
 
-#include "CIMitar.h"
-#include "utility.h"
+#include "CIMitar.hpp"
+#include "utility.hpp"
 #include <array>
 
 using namespace CIMitar;

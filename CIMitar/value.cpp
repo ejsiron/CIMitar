@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <map>
 #include <type_traits>
-#include "CIMitar.h"
-#include "value.h"
+#include "CIMitar.hpp"
+#include "value.hpp"
 
 using namespace std;
 using namespace CIMitar;
