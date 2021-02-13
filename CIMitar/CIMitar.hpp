@@ -19,6 +19,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -695,7 +696,7 @@ namespace CIMitar
 		const std::vector<float> Real32A() const noexcept;
 		const double Real64() const noexcept;
 		const std::vector<double> Real64A() const noexcept;
-		const std::wstring String() const noexcept;
+		const std::wstring String() const;
 		const std::vector<std::wstring> StringA() const noexcept;
 		const int SignedInt() const noexcept;
 		const std::vector<int> SignedIntA() const noexcept;

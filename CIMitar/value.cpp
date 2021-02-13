@@ -176,9 +176,9 @@ struct NumericVisitor
 		return n;
 	}
 
-	template <typename in_value>
-	typename enable_if_t <!is_arithmetic_v<in_value> || is_same_v<wchar_t, in_value>, const out_num>
-		operator()(const in_value&) const noexcept
+	template <typename in_type>
+	typename enable_if_t <!is_arithmetic_v<in_type> || is_same_v<wchar_t, in_type>, const out_num>
+		operator()(const in_type&) const noexcept
 	{
 		return out_num{};
 	}
@@ -193,9 +193,9 @@ struct CharVisitor
 		return n ? L'1' : L'0';
 	}
 
-	template <typename in_value>
-	typename enable_if_t <!is_arithmetic_v<in_value> || is_same_v<wchar_t, in_value>, const wchar_t>
-		operator()(const in_value&) const noexcept
+	template <typename in_type>
+	typename enable_if_t <!is_arithmetic_v<in_type> || is_same_v<wchar_t, in_type>, const wchar_t>
+		operator()(const in_type&) const noexcept
 	{
 		return DefaultWCHAR_T;
 	}
@@ -211,9 +211,9 @@ struct StringVisitor
 		return to_wstring(n);
 	}
 
-	template <typename in_value>
-	typename enable_if_t<!is_arithmetic_v<in_value> || is_same_v<in_value, wchar_t>, const wstring>
-		operator()(const in_value&) noexcept
+	template <typename in_type>
+	typename enable_if_t<!is_arithmetic_v<in_type> || is_same_v<in_type, wchar_t>, const wstring>
+		operator()(const in_type&) noexcept
 	{
 		return DefaultWSTRING;
 	}
@@ -255,6 +255,20 @@ struct DateTimeVisitor
 	}
 };
 
+struct InstanceVisitor
+{
+	template<class in_type>
+	const Instance operator()(const in_type& invalue) noexcept
+	{
+		return CIMitar::Instance::Empty();
+	}
+
+	const Instance operator()(const Instance& SourceInstance) noexcept
+	{
+		return SourceInstance;
+	}
+};
+
 const bool Value::IsArray() const noexcept
 {
 	return isarray;
@@ -279,6 +293,19 @@ vector<outtype> VectorizeMIArray(const MIType* SourceArray, unsigned int length)
 	}
 	catch (...) {}
 	return OutVector;
+}
+
+wstring remove_non_printable_chars(wchar_t* instr)
+{
+	wstring outstr{ instr };
+	// get the ctype facet for wchar_t (Unicode code points in pactice)
+	typedef std::ctype<wchar_t> ctype;
+	const ctype& ct = std::use_facet<ctype>(std::locale());
+	// remove non printable Unicode characters
+	outstr.erase(std::remove_if(outstr.begin(), outstr.end(),
+		[&ct](wchar_t ch) { return !ct.is(ctype::print, ch); }),
+		outstr.end());
+	return outstr;
 }
 
 Value::Value(MI_Value& Val, const MI_Type Type, const bool Empty) noexcept
@@ -336,7 +363,7 @@ Value::Value(MI_Value& Val, const MI_Type Type, const bool Empty) noexcept
 	case MI_SINT32A:	cimvalue = VectorizeMIArray<int>(Val.sint32a.data, length); break;
 	case MI_SINT64:	cimvalue = static_cast<long long>(Val.sint64);	break;
 	case MI_SINT64A:	cimvalue = VectorizeMIArray<long long>(Val.sint64a.data, length); break;
-	case MI_STRING:	cimvalue = Val.string;	break;
+	case MI_STRING:	cimvalue = remove_non_printable_chars(Val.string); break;
 	case MI_STRINGA:	cimvalue = VectorizeMIArray<wstring>(Val.stringa.data, length); break;
 	case MI_UINT8:		cimvalue = static_cast<unsigned int>(Val.uint8);	break;
 	case MI_UINT8A:	cimvalue = VectorizeMIArray<unsigned int>(Val.uint8a.data, length); break;
@@ -385,6 +412,7 @@ public:
 
 class BoolAVisitor :public BaseVisitorArray<bool, NumericVisitor<bool>> {};
 class Char16AVisitor :public BaseVisitorArray<wchar_t, CharVisitor> {};
+class InstanceAVisitor :public BaseVisitorArray<Instance, InstanceVisitor> {};
 class IntervalAVisitor :public BaseVisitorArray<Interval, DateTimeVisitor<Interval>> {};
 class TimestampAVisitor :public BaseVisitorArray<Timestamp, DateTimeVisitor<Timestamp>> {};
 template <typename T>
@@ -429,6 +457,21 @@ const vector<wchar_t> Value::Char16A() const noexcept
 	default:
 		return visit(Char16AVisitor{}, cimvalue);
 	}
+}
+
+const Instance Value::Instance() const noexcept
+{
+	if (isempty) return Instance::Empty();
+	else
+	{
+		return visit(InstanceVisitor{}, cimvalue);
+	}
+}
+
+const vector<CIMitar::Instance> Value::InstanceA() const noexcept
+{
+	if (isempty) { return InstanceAVisitor::Empty(); }
+	return visit(InstanceAVisitor{}, cimvalue);
 }
 
 const Interval Value::Interval() const noexcept
@@ -568,7 +611,7 @@ const std::vector<long long> Value::SignedInt64A() const noexcept
 	return visit(NumericAVisitor<long long>{}, cimvalue);
 }
 
-const wstring Value::String() const noexcept
+const wstring Value::String() const
 {
 	if (isempty) { return DefaultWSTRING; }
 	switch (cimtype)
