@@ -2,8 +2,9 @@
 //
 
 #include <Windows.h>
-#include <fstream>
 #include <iostream>
+#include <locale>
+
 #include "..\CIMitar\CIMitar.hpp"
 using namespace std;
 
@@ -19,9 +20,6 @@ int main()
 	auto instances{ sess.GetInstances(L"Win32_Service") };
 	wcout << L"Count: " << instances.size() << endl;
 	size_t counter{ 0 };
-	wofstream outfile;
-	outfile.open("c:\\temp\\bin.bin", ios::out | ios::trunc);
-	outfile.close();
 	for (auto& svc : instances)
 	{
 		counter++;
@@ -29,21 +27,11 @@ int main()
 		wcout << svc.CimClass().Name() << endl;
 		for (auto const& prop : svc.Properties())
 		{
-			try
+			if (prop.Name() == L"Name" || prop.Name() == L"Description")
 			{
-				outfile.open("c:\\temp\\bin.bin", ios::out | ios::binary | ios::app);
-
-				if (//prop.Name() == L"Name" ||
-					prop.Name() == L"Description")
-					outfile << L"Property: " << prop.Name() << L" | size: " << prop.GetValue().String().size() << L" | Value: " << prop.GetValue().String() << endl;
-				outfile.flush();
-				outfile.close();
-			}
-			catch (...)
-			{
-				wcout << L"error" << endl;
+				wcout << L"Property: " << prop.Name() << L" | Value: " << prop.GetValue().String() << endl;
 			}
 		}
-		//wcout.flush();
+		wcout.flush();
 	}
 }
