@@ -14,6 +14,7 @@ namespace CIMitar::Operation
 	Instance GetInstance(MI_Session* TheSession, const MI_Char* Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept;
 	std::list<Instance> DeleteInstance(MI_Session* TheSession, const std::wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept;
 	std::list<Instance> ModifyInstance(MI_Session* TheSession, const std::wstring& Namespace, const MI_Instance* ModifyInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept;
+	std::list<Instance> QueryInstances(MI_Session* TheSession, const std::wstring& Namespace, const std::wstring Query, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept;
 }
 
 #endif CIMITAR_OPERATION_H_INCLUDED

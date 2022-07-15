@@ -298,7 +298,7 @@ vector<outtype> VectorizeMIArray(const MIType* SourceArray, unsigned int length)
 wstring remove_non_printable_chars(wchar_t* instr)
 {
 	wstring outstr{ instr };
-	// get the ctype facet for wchar_t (Unicode code points in pactice)
+	// get the ctype facet for wchar_t (Unicode code points in practice)
 	typedef std::ctype<wchar_t> ctype;
 	const ctype& ct = std::use_facet<ctype>(std::locale());
 	// remove non printable Unicode characters

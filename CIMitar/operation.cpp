@@ -163,6 +163,12 @@ list<Instance> Operation::ModifyInstance(MI_Session* TheSession, const wstring& 
 	return GetInstance(TheSession, MI_Session_ModifyInstance, 0, nullptr, Namespace.c_str(), SourceInstance, nullptr);
 }
 
+// TODO: you are here, this is not tested
+list<Instance> Operation::QueryInstances(MI_Session* TheSession, const std::wstring& Namespace, const std::wstring Query, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+{
+	return GetInstance(TheSession, MI_Session_QueryInstances, 0, nullptr, Namespace.c_str(), L"WQL", Query, nullptr);
+}
+
 // wrapped functions that generate operations //
 //********************************************//
 

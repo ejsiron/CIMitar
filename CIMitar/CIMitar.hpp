@@ -5,8 +5,8 @@
 #error CIMitar is a C++ wrapper and only works with C++.
 #endif
 #ifdef _MSC_VER
-#if _MSVC_LANG < 201703L
-#error CIMitar uses C++17 features and requires a capable compiler
+#if _MSVC_LANG < 202002L
+#error CIMitar uses C++20 features and requires a capable compiler
 #endif
 #endif
 
@@ -149,9 +149,16 @@ namespace CIMitar
 		Ignore
 	};
 
+	class ManagementType
+	{
+	public:
+		virtual MI_Type GetType() = 0;
+		virtual ~ManagementType() {}
+	};
+
 	class Timestamp; // forward declaration for Interval conversion
 
-	class Interval
+	class Interval :public ManagementType
 	{
 	public:
 		unsigned int Days{ 0 };
@@ -165,12 +172,13 @@ namespace CIMitar
 		Interval(const MI_Interval& MIInterval) noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
+		MI_Type GetType() override { return MI_Type::MI_DATETIME; }
 	};
 
 	const bool operator==(const MI_Interval& lhs, const MI_Interval& rhs) noexcept;
 	const bool operator==(const Interval& lhs, const Interval& rhs) noexcept;
 
-	class Timestamp
+	class Timestamp:public ManagementType
 	{
 	public:
 		unsigned int Year{ 0 };
@@ -468,6 +476,8 @@ namespace CIMitar
 		Instance NewInstance(const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const Instance& SourceInstance) noexcept;
+		std::list<Instance> QueryInstances(const std::wstring& const Query);
+		std::list<Instance> QueryInstances(const std::wstring& const Namespace, const std::wstring const& Query);
 
 		friend Session NewSession();
 		friend Session NewSession(const std::wstring ComputerName);

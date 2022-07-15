@@ -269,3 +269,7 @@ Session CIMitar::NewSession(const std::wstring ComputerName, const SessionOption
 	Sessions.emplace(newsession.TheSession.get(), &newsession);
 	return newsession;
 }
+
+std::list<CIMitar::Instance> Session::QueryInstances(const std::wstring& const Namespace, const std::wstring const& Query)
+{
+}
