@@ -9,6 +9,9 @@
 #error CIMitar uses C++20 features and requires a capable compiler
 #endif
 #endif
+#define NTDDI_VERSION NTDDI_WIN10_19H1
+#define _WIN32_WINNT _WIN32_WINNT_WIN10
+#define WINVER _WIN32_WINNT_WIN10 
 
 #include <Windows.h>
 #include <ctime>
@@ -195,6 +198,7 @@ namespace CIMitar
 		Timestamp(const MI_Timestamp& MITimestamp) noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
+		MI_Type GetType() override { return MI_Type::MI_DATETIME; }
 	};
 
 	const bool operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept;
@@ -348,6 +352,7 @@ namespace CIMitar
 		SessionOptions& operator=(const SessionOptions&) noexcept = default;
 		SessionOptions(SessionOptions&&) noexcept = default;
 		SessionOptions& operator=(SessionOptions&&) noexcept = default;
+		~SessionOptions() {}
 		ListedOption<bool> CheckCACert{ overriddenoptions };
 		ListedOption<bool> CheckCertCN{ overriddenoptions };
 		ListedOption<bool> CheckCertRevocation{ overriddenoptions };
