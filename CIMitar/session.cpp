@@ -270,8 +270,12 @@ Session CIMitar::NewSession(const std::wstring ComputerName, const SessionOption
 	return newsession;
 }
 
+std::list<CIMitar::Instance> Session::QueryInstances(const std::wstring& Query)
+{
+	return QueryInstances(GetDefaultNamespace(), Query);
+}
+
 std::list<CIMitar::Instance> Session::QueryInstances(const std::wstring& Namespace, const std::wstring& Query)
 {
-	// todo: implement
-	return std::list<CIMitar::Instance>();
+	return Operation::QueryInstances(TheSession.get(), Namespace, Query, nullptr, nullptr, nullptr);
 }

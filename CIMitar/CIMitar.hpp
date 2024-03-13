@@ -386,7 +386,7 @@ namespace CIMitar
 		void ResetAll();
 	};
 
-	//forward declarations for use in class Instance
+	//forward declarations for use in Class and Instance
 	class Property;
 	class PropertyDeclaration;
 
@@ -735,6 +735,7 @@ namespace CIMitar
 		const CIMTypes GetType() const noexcept;
 	};
 
+	/* Stand-alone functions that work from the default session */
 	void SetDefaultNamespace(const std::wstring& Namespace);
 	const std::wstring& GetDefaultNamespace();
 	inline void ResetNamespace() { SetDefaultNamespace(DefaultCIMNamespace); }

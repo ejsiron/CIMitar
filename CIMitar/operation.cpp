@@ -21,8 +21,8 @@ class BaseOperationPack
 public:
 	MI_Session* session{ nullptr };
 	MI_OperationCallbacks callbacks = MI_OPERATIONCALLBACKS_NULL;
-	OperationFlags* flags;
-	OperationOptions* options;
+	OperationFlags* flags{ nullptr };
+	OperationOptions* options{ nullptr };
 	MI_Operation operation = MI_OPERATION_NULL;
 	MI_Result ResultCode{ MI_Result::MI_RESULT_OK };
 	const MI_Char* pErrorMessage{ nullptr };
