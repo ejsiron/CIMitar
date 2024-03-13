@@ -4,7 +4,7 @@
 using namespace CIMitar;
 using namespace std;
 
-void DestroyDeleter(MI_Instance* instance)
+static void DestroyDeleter(MI_Instance* instance)
 {
 	if (instance)
 	{
@@ -12,7 +12,7 @@ void DestroyDeleter(MI_Instance* instance)
 	}
 }
 
-void DestructDeleter(MI_Instance* instance)
+static void DestructDeleter(MI_Instance* instance)
 {
 	if (instance)
 	{
@@ -139,3 +139,24 @@ void CIMitar::swap(Instance& lhs, Instance& rhs) noexcept
 {
 	lhs.swap(rhs);
 }
+
+Instance CIMitar::NewInstance(const std::wstring& ClassName) noexcept
+{
+	return NewInstance(DefaultCIMNamespace, ClassName);
+}
+
+Instance CIMitar::NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept
+{
+	return GetDefaultSession().NewInstance(Namespace, ClassName);
+}
+
+std::list<Instance> CIMitar::GetInstance(std::wstring ClassName) noexcept
+{
+	return GetDefaultSession().GetInstances(ClassName);
+}
+
+std::list<Instance> CIMitar::GetInstance(std::wstring Namespace, std::wstring ClassName) noexcept
+{
+	return GetDefaultSession().GetInstances(Namespace, ClassName);
+}
+

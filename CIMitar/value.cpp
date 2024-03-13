@@ -165,6 +165,7 @@ const CIMTypes CIMTypeIDTranslator(const MI_Type Type) noexcept
 }
 
 #pragma warning(push)
+#pragma warning(disable: 4267)	// size_t downconversions
 #pragma warning(disable: 4244)
 template <typename out_num>
 struct NumericVisitor

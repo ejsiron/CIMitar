@@ -5,7 +5,7 @@ using namespace std;
 
 using OpCodes = CIMitar::Activity::Codes;
 
-void ProcessResult(MI_Result Result, ErrorStack& ErrorLog, OpCodes OpCode, wstring& OptionName) noexcept
+static void ProcessResult(MI_Result Result, ErrorStack& ErrorLog, OpCodes OpCode, wstring& OptionName) noexcept
 {
 	if (Result != MI_RESULT_OK)
 	{

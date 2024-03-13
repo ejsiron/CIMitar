@@ -79,7 +79,7 @@ const bool Class::IsStatic() const noexcept
 
 const bool Class::IsDynamic() const noexcept
 {
-	return reinterpret_cast<int>(cimclass->classDecl->owningClass) == -1;
+	return reinterpret_cast<long long>(cimclass->classDecl->owningClass) == -1;
 }
 
 const bool Class::IsAssociation() const noexcept

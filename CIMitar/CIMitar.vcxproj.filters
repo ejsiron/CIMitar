@@ -74,7 +74,7 @@
     <ClCompile Include="time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="option.cpp">
+    <ClCompile Include="session_options.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="appinit.cpp">

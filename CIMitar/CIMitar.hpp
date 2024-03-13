@@ -178,7 +178,7 @@ namespace CIMitar
 	const bool operator==(const MI_Interval& lhs, const MI_Interval& rhs) noexcept;
 	const bool operator==(const Interval& lhs, const Interval& rhs) noexcept;
 
-	class Timestamp:public ManagementType
+	class Timestamp :public ManagementType
 	{
 	public:
 		unsigned int Year{ 0 };
@@ -195,6 +195,7 @@ namespace CIMitar
 		Timestamp(const MI_Timestamp& MITimestamp) noexcept;
 		const MI_Timestamp ToMITimestamp() const noexcept;
 		const MI_Interval ToMIInterval() const noexcept;
+		MI_Type GetType() override { return MI_Type::MI_DATETIME; }
 	};
 
 	const bool operator==(const MI_Timestamp& lhs, const MI_Timestamp& rhs) noexcept;
@@ -476,8 +477,8 @@ namespace CIMitar
 		Instance NewInstance(const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
 		Instance NewInstance(const Instance& SourceInstance) noexcept;
-		std::list<Instance> QueryInstances(const std::wstring& const Query);
-		std::list<Instance> QueryInstances(const std::wstring& const Namespace, const std::wstring const& Query);
+		std::list<Instance> QueryInstances(const std::wstring& Query);
+		std::list<Instance> QueryInstances(const std::wstring& Namespace, const std::wstring& Query);
 
 		friend Session NewSession();
 		friend Session NewSession(const std::wstring ComputerName);
@@ -741,7 +742,7 @@ namespace CIMitar
 	Session& GetDefaultSession() noexcept;
 	Instance NewInstance(const std::wstring& ClassName) noexcept;
 	Instance NewInstance(const std::wstring& Namespace, const std::wstring& ClassName) noexcept;
-	Instance NewInstance(Class& SourceClass);	// this will make a client-side-only instance; add an overload that accepts properties
+	Instance NewInstance(Class& SourceClass);	// TODO: this will make a client-side-only instance; add an overload that accepts properties
 	std::list<Instance> GetInstance(std::wstring ClassName) noexcept;
 	std::list<Instance> GetInstance(std::wstring Namespace, std::wstring ClassName) noexcept;
 	std::list<Instance> GetInstance(std::wstring ClassName, std::wstring Query) noexcept;
