@@ -120,22 +120,26 @@ list<Instance> Operation::EnumerateInstances(MI_Session* TheSession, const wstri
 	return GetInstance(TheSession, MI_Session_EnumerateInstances, 0, nullptr, Namespace.c_str(), ClassName.c_str(), KeysOnly, nullptr);
 }
 
-list<Instance> Operation::GetAssociatedInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, const wstring& AssociatorClassName, const wstring& ResultClassName, const wstring& Role, const wstring& ResultRole, const bool KeysOnly, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
+list<Instance> Operation::GetAssociatedInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, const wstring& ResultClassName, const std::wstring& AssociatorClassName, const std::wstring& Role, const std::wstring& ResultRole, const bool KeysOnly, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
 	return GetInstance(TheSession, MI_Session_AssociatorInstances, 0, nullptr, Namespace.c_str(),
-		SourceInstance, AssociatorClassName.c_str(), ResultClassName.c_str(), Role.c_str(),
-		ResultRole.c_str(), KeysOnly, callbacks);
+		SourceInstance,
+		AssociatorClassName.size() ? AssociatorClassName.c_str() : nullptr,
+		ResultClassName.size() ? ResultClassName.c_str() : nullptr,
+		Role.size() ? Role.c_str() : nullptr,
+		ResultRole.size() ? ResultRole.c_str() : nullptr,
+		KeysOnly, callbacks);
 }
 
 Instance Operation::CreateInstance(MI_Session* TheSession, const wstring& Namespace, const MI_Instance* SourceInstance, MI_OperationCallbacks* callbacks, OperationFlags* flags, OperationOptions* options) noexcept
 {
-	auto CreatedInstance{ GetInstance(TheSession, MI_Session_CreateInstance, 0, nullptr, Namespace.size() ? Namespace.c_str() : DefaultCIMNamespace, SourceInstance, nullptr) };
-	if (CreatedInstance.size())
+	auto CreatedInstances{ GetInstance(TheSession, MI_Session_CreateInstance, 0, nullptr, Namespace.size() ? Namespace.c_str() : DefaultCIMNamespace, SourceInstance, nullptr) };
+	if (CreatedInstances.size())
 	{
-		return CreatedInstance.front();
+		return CreatedInstances.front();
 	}
 	else
-	{
+	{	// TODO: check this, seems wrong
 		return(Instance{ SourceInstance, TheSession });
 	}
 }

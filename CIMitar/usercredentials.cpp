@@ -1,61 +1,143 @@
 #include "CIMitar.hpp"
 #include <algorithm>
 #include <cstring>
+#include <wincrypt.h>
+#include <memory>
 #include <string>
 #include <vector>
+
+#pragma comment(lib, "crypt32.lib")
 
 using namespace std;
 using namespace CIMitar;
 
-const map<AuthenticationTypes, wstring> AuthTypeMap = {
-	{AuthenticationTypes::DEFAULT, MI_AUTH_TYPE_DEFAULT},
-	{AuthenticationTypes::NONE, MI_AUTH_TYPE_NONE},
-	{AuthenticationTypes::DIGEST, MI_AUTH_TYPE_DIGEST},
-	{AuthenticationTypes::NEGO_WITH_CREDS, MI_AUTH_TYPE_NEGO_WITH_CREDS},
-	{AuthenticationTypes::NEGO_NO_CREDS, MI_AUTH_TYPE_NEGO_NO_CREDS},
-	{AuthenticationTypes::BASIC, MI_AUTH_TYPE_BASIC},
-	{AuthenticationTypes::KERBEROS, MI_AUTH_TYPE_KERBEROS},
-	{AuthenticationTypes::CLIENT_CERTS, MI_AUTH_TYPE_CLIENT_CERTS},
-	{AuthenticationTypes::NTLM, MI_AUTH_TYPE_NTLM}
+/* TODO: this CS is initialized but never deleted, which is only acceptable because
+	there is only ever one instance and the library is statically linked.
+	Windows will clean up the CS when the process ends. This saves the need for refcounting
+	or other tracking, which is ideal in this case because the overhead exceeds the value
+	and added risks of doing it "right".
+	Add logic for attach/detach if dynamic linking is ever implemented. */
+static CRITICAL_SECTION PasswordCriticalSection{ 0 };
+
+const std::map<AuthenticationTypes, std::wstring> AuthTypeMap = {
+{AuthenticationTypes::DEFAULT, MI_AUTH_TYPE_DEFAULT},
+{AuthenticationTypes::NONE, MI_AUTH_TYPE_NONE},
+{AuthenticationTypes::DIGEST, MI_AUTH_TYPE_DIGEST},
+{AuthenticationTypes::NEGO_WITH_CREDS, MI_AUTH_TYPE_NEGO_WITH_CREDS},
+{AuthenticationTypes::NEGO_NO_CREDS, MI_AUTH_TYPE_NEGO_NO_CREDS},
+{AuthenticationTypes::BASIC, MI_AUTH_TYPE_BASIC},
+{AuthenticationTypes::KERBEROS, MI_AUTH_TYPE_KERBEROS},
+{AuthenticationTypes::CLIENT_CERTS, MI_AUTH_TYPE_CLIENT_CERTS},
+{AuthenticationTypes::NTLM, MI_AUTH_TYPE_NTLM}
 };
 
-// "volatile" to hopefully prevent the compiler from optimizing this call away during destruction
-static volatile void* ObliterateString(std::unique_ptr<wchar_t[]>& DoomedString)
+// "volatile" to hopefully prevent the compiler from optimizing this call away
+static volatile void* ZeroString(wchar_t* DoomedString)
 {
 	if (DoomedString != nullptr)
 	{
-		auto StringLength = wcslen(DoomedString.get()) + 1;
-		SecureZeroMemory(DoomedString.get(), StringLength * 2);
+		auto StringLength = wcslen(DoomedString) + 1;
+		SecureZeroMemory(DoomedString, StringLength * sizeof(wchar_t));
 	}
 	return &DoomedString;
+}
+
+static pair<DWORD, vector<char>> EncryptSecret(const wchar_t* ClearText) noexcept
+{
+	DWORD EncryptionPadding{ 0 };
+	DWORD ClearTextLength = (wcslen(ClearText) + 1) * sizeof(wchar_t);
+	DWORD EncryptedLength{ ClearTextLength };
+	if (EncryptionPadding = ClearTextLength % CRYPTPROTECTMEMORY_BLOCK_SIZE)
+	{
+		EncryptedLength += CRYPTPROTECTMEMORY_BLOCK_SIZE - EncryptionPadding;
+	}
+	PVOID secret = VirtualAlloc(NULL, EncryptedLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
+	// todo: nullptr check
+	VirtualLock(secret, EncryptedLength);
+	// todo: VirtualLock returns bool, errors in GetLastError()
+	memcpy_s(secret, EncryptedLength, ClearText, ClearTextLength);
+	CryptProtectMemory(secret, EncryptedLength, CRYPTPROTECTMEMORY_SAME_PROCESS);
+	DWORD EncryptionStatus = GetLastError();
+	wstring EncryptedSecret{
+		EncryptionStatus == ERROR_SUCCESS ? static_cast<wchar_t*>(secret)
+		: L""
+	};
+	VirtualUnlock(secret, EncryptedLength);
+	VirtualFree(secret, 0, MEM_RELEASE);
 }
 
 static std::unique_ptr<wchar_t[]> CopyPassword(const wchar_t* Source) noexcept
 {
 	auto PasswordBufferLength = wcslen(Source) + 1;
 	std::unique_ptr<wchar_t[]> Destination{ std::make_unique<wchar_t[]>(PasswordBufferLength) };
-	ObliterateString(Destination);
+	ZeroString(Destination.get());
 	wcscpy_s(Destination.get(), PasswordBufferLength, Source);
 	return Destination;
 }
 
-UserCredentials::UserCredentials(MI_UserCredentials* Credentials) noexcept
+UserCredentials::UserCredentials(const std::wstring Username, wchar_t* Password, const bool ClearSource) noexcept
 {
-	for (auto const& AuthType : AuthTypeMap)
+	UserCredentials::UserCredentials(std::wstring{}, Username, Password, ClearSource);
+}
+
+UserCredentials::UserCredentials(const std::wstring Domain, const std::wstring Username, wchar_t* ClearTextPassword, const bool ClearSource) noexcept
+{
+	domain = Domain;
+	username = Username;
+	if (PasswordCriticalSection.OwningThread == 0)
 	{
-		if (!AuthType.second.compare(Credentials->authenticationType))
-		{
-			authenticationtype = AuthType.first;
-		}
+		InitializeCriticalSectionAndSpinCount(&PasswordCriticalSection, 0x4000);
 	}
-	if (authenticationtype == AuthenticationTypes::CLIENT_CERTS)
+	EnterCriticalSection(&PasswordCriticalSection);
+	DWORD EncryptionPadding{ 0 };
+	//wchar_t* EncryptedPassword{ nullptr };
+	DWORD ClearTextLength = (wcslen(ClearTextPassword) + 1) * sizeof(wchar_t);
+	DWORD EncryptedLength{ ClearTextLength };
+	if (EncryptionPadding = ClearTextLength % CRYPTPROTECTMEMORY_BLOCK_SIZE)
 	{
-		credentials = Credentials->credentials.certificateThumbprint;
+		EncryptedLength += CRYPTPROTECTMEMORY_BLOCK_SIZE - EncryptionPadding;
 	}
-	else
+	PVOID EncryptedText = VirtualAlloc(NULL, EncryptedLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
+	// todo: nullptr check
+	VirtualLock(EncryptedText, EncryptedLength);
+	// todo: VirtualLock returns bool, errors in GetLastError()
+	memcpy_s(EncryptedText, EncryptedLength, ClearTextPassword, ClearTextLength);
+	CryptProtectMemory(EncryptedText, EncryptedLength, CRYPTPROTECTMEMORY_SAME_PROCESS);
+	DWORD EncryptionStatus = GetLastError();	// todo: deal with any error code from CryptProtectMemory
+	secret =
+		EncryptionStatus == ERROR_SUCCESS ? static_cast<wchar_t*>(EncryptedText)
+		: L""
+	;
+	VirtualUnlock(EncryptedText, EncryptedLength);
+	VirtualFree(EncryptedText, 0, MEM_RELEASE);
+	if (ClearSource)
 	{
-		credentials = UsernamePasswordCreds(&Credentials->credentials.usernamePassword);
+		ZeroString(ClearTextPassword);
 	}
+	LeaveCriticalSection(&PasswordCriticalSection);
+}
+
+template<typename OptionType, typename AddCredentialFunction>
+void UserCredentials::AddCredentials(UserCredentials& Credentials, OptionType* TargetOption, AddCredentialFunction AddFunction) noexcept
+{
+	EnterCriticalSection(&PasswordCriticalSection);
+	MI_UserCredentials* credentials{ static_cast<MI_UserCredentials*>(
+		VirtualAlloc(NULL, sizeof(MI_UserCredentials), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID)
+		) };
+	//TODO check nullptr, GetLastError() has details
+	if (VirtualLock(credentials, sizeof(MI_UserCredentials)))
+	{
+		//TODO credentials.authenticationType = MI_AUTH_TYPE_DEFAULT;
+		credentials->authenticationType = MI_AUTH_TYPE_BASIC;
+		credentials->credentials.usernamePassword.domain = Credentials.domain.c_str();
+		credentials->credentials.usernamePassword.username = Credentials.username.c_str();
+		credentials->credentials.usernamePassword.password = Credentials.password.get();
+		AddFunction(TargetOption, credentials);
+		VirtualUnlock(credentials, sizeof(MI_UserCredentials));
+	}
+	// else log error, GetLastError() has details
+	VirtualFree(credentials, 0, MEM_RELEASE);
+	LeaveCriticalSection(&PasswordCriticalSection);
 }
 
 UsernamePasswordCreds::UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept :
@@ -161,6 +243,7 @@ MI_Result UserCredentials::ApplyCredential(void* TargetOption, CredentialApplica
 	}
 	catch (...)
 	{
+		;
 		// if anything goes wrong, allow the MI API to deal with an empty credential pack
 	}
 	switch (ApplicationMode)

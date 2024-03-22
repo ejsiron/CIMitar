@@ -279,3 +279,18 @@ std::list<CIMitar::Instance> Session::QueryInstances(const std::wstring& Namespa
 {
 	return Operation::QueryInstances(TheSession.get(), Namespace, Query, nullptr, nullptr, nullptr);
 }
+
+std::list<Instance> Session::GetAssociatedInstances(const Instance& SourceInstance, const bool KeysOnly)
+{
+	return GetAssociatedInstances(SourceInstance, L"", L"", L"", L"", KeysOnly);
+}
+
+std::list<Instance> Session::GetAssociatedInstances(const Instance& SourceInstance, const std::wstring& ResultClass, const bool KeysOnly)
+{
+	return Operation::GetAssociatedInstance(TheSession.get(), SourceInstance.Namespace(), SourceInstance.ciminstance.get(), L"", ResultClass, L"", L"", KeysOnly, nullptr, nullptr, nullptr);
+}
+
+std::list<Instance> Session::GetAssociatedInstances(const Instance& SourceInstance, const std::wstring& AssociationClass, const std::wstring& ResultClass, const std::wstring& Role, const std::wstring& ResultRole, const bool KeysOnly)
+{
+	return Operation::GetAssociatedInstance(TheSession.get(), SourceInstance.Namespace(), SourceInstance.ciminstance.get(), AssociationClass, ResultClass, Role, ResultRole, KeysOnly, nullptr, nullptr, nullptr);
+}

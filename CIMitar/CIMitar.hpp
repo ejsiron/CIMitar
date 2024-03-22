@@ -19,7 +19,6 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -206,27 +205,7 @@ namespace CIMitar
 
 	using DateTime = std::variant <Interval, Timestamp>;
 
-	class UsernamePasswordCreds
-	{
-	private:
-		std::wstring domain;
-		std::wstring username;
-		std::unique_ptr<wchar_t[]> password;	// memory securely wiped at destruction, but not protected in-memory
-		friend class UserCredentials;
-	public:
-		UsernamePasswordCreds(const MI_UsernamePasswordCreds* Credentials) noexcept;
-		UsernamePasswordCreds(const std::wstring Username, const wchar_t* Password) noexcept;
-		UsernamePasswordCreds(const std::wstring Domain, const std::wstring Username, const wchar_t* Password) noexcept;
-		UsernamePasswordCreds(const UsernamePasswordCreds& copysource) noexcept;
-		UsernamePasswordCreds& operator=(const UsernamePasswordCreds& copysource) noexcept;
-		friend const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
-		~UsernamePasswordCreds();
-	};
-
-	// only compares domain & username to reduce password leaks
-	const bool operator==(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
-	const bool operator!=(UsernamePasswordCreds& lhs, UsernamePasswordCreds& rhs) noexcept;
-
+#pragma region Authentication and Credentials
 	enum class AuthenticationTypes
 	{
 		DEFAULT,
@@ -242,148 +221,95 @@ namespace CIMitar
 		ISSUERCERT
 	};
 
-	enum class CredentialApplicationModes
-	{
-		DestinationMode,
-		ProxyMode,
-		SubscriptionDeliveryMode
-	};
-
-	class UserCredentials
+	class UserCredentials final
 	{
 	private:
+		std::wstring domain;
+		std::wstring username;
+		std::vector<char> secret;
 		AuthenticationTypes authenticationtype{ AuthenticationTypes::DEFAULT };
-		std::variant<std::wstring, UsernamePasswordCreds> credentials;
 	public:
-		UserCredentials(MI_UserCredentials* Credentials) noexcept;
-		UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept : credentials(std::move(UsernamePasswordCreds(Credentials))) {}
-		UserCredentials(const std::wstring& CertificateThumbprint) noexcept : credentials(CertificateThumbprint) {}
-		UserCredentials(const UsernamePasswordCreds& Credentials) noexcept :credentials(Credentials) {}
-		MI_Result ApplyCredential(void* TargetOption, CredentialApplicationModes ApplicationMode) noexcept;
+		UserCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
+		UserCredentials(const std::wstring Username, wchar_t* ClearTextPassword, const bool ClearSource = false) noexcept;
+		UserCredentials(const std::wstring Domain, const std::wstring Username, wchar_t* ClearTextPassword, const bool ClearSource = false) noexcept;
+		UserCredentials(const UserCredentials& copysource) noexcept;
+		UserCredentials& operator=(const UserCredentials& copysource) noexcept;
+		friend const bool operator==(UserCredentials& lhs, UserCredentials& rhs) noexcept;
+		void GetCredential(MI_UserCredentials* OutCredential) noexcept;
+		~UserCredentials() = default;
+		bool AddDestinationCredentials(MI_DestinationOptions* DestinationOptions) noexcept;
+		bool AddProxyCredentials(MI_DestinationOptions* DestinationOptions) noexcept;
+		bool AddDeliveryCredentials(MI_SubscriptionDeliveryOptions* DeliveryOptions) noexcept;
 	};
+
+	// only compares domain & username to reduce password leaks
+	const bool operator==(UserCredentials& lhs, UserCredentials& rhs) noexcept;
+	const bool operator!=(UserCredentials& lhs, UserCredentials& rhs) noexcept;
+#pragma endregion
 
 	enum class SessionProtocols { DCOM, WSMAN };
-	enum class SessionPrefixOverrides { NONE, HTTP, HTTPS };
+	enum class SessionPrefixOverrides { HTTP, HTTPS };
 	enum class SessionPacketEncodingOptions { DEFAULT, UTF8, UTF16 };
-	enum class SessionProxyOptions { AUTO, NONE, IE, WINHTTP };
+	enum class SessionProxyTypes { AUTO, NONE, IE, WINHTTP };
 	enum class SessionErrorModes { NOTIFY, WAIT };
 
-	template <typename T>
-	class Option
+	class OptionPackBase
 	{
-	protected:
-		T value;
-#pragma warning(push)
-#pragma warning(disable: 26495)
-		Option() noexcept {}
-#pragma warning(pop)
-		Option(T Value) noexcept :value(Value) {}
 	public:
-		const T& get() const noexcept { return value; }
-		virtual void Set(T Value) { value = Value; }
-		void operator=(T& Value) { Set(Value); }
+		OptionPackBase() = default;
+		OptionPackBase(const OptionPackBase&) = default;
+		OptionPackBase& operator=(const OptionPackBase&) = default;
+		OptionPackBase(OptionPackBase&&) = default;
+		OptionPackBase& operator=(OptionPackBase&&) = default;
+		virtual ~OptionPackBase() = default;
+		virtual void SetCustomOption(const std::wstring& OptionName, const int CustomValue) = 0;
+		virtual void SetCustomOption(const std::wstring& OptionName, const std::wstring CustomValue) = 0;
+		virtual void RemoveCustomStringOption(const std::wstring& OptionName) = 0;
+		virtual void RemoveCustomNumberOption(const std::wstring& OptionName) = 0;
+		virtual void Reset() = 0;
 	};
 
-	// TODO: investigate templating an application function that takes the *Set* function and translates parameters
-
-	template <typename T>
-	class ListedOption :public Option<T>
+	class SessionOptions: public OptionPackBase
 	{
 	private:
-		std::set<const void*>& optionlist;
-	public:
-		void swap(ListedOption& SwapSource) noexcept
-		{
-			std::swap(this->value, SwapSource.value);
-			std::swap(optionlist, SwapSource.optionlist);
-		}
-		ListedOption(std::set<const void*>& OwningOptionList) noexcept :optionlist(OwningOptionList) {}
-		ListedOption(const ListedOption& CopySource)noexcept :optionlist(CopySource.optionlist) { this->value = CopySource.value; }
-		ListedOption& operator=(ListedOption CopySource) noexcept
-		{
-			if (this != &CopySource)
-			{
-				swap(CopySource);
-			}
-			return *this;
-		}
-		void Reset() noexcept { optionlist.erase(this); }
-		void Set(T Value) override { this->value = Value; optionlist.insert(this); }
-		const bool IsOverridden() const noexcept
-		{
-			auto found{ optionlist.find(this) };
-			return found != optionlist.end();
-		}
-	};
-	template <typename T>
-	void swap(ListedOption<T>& lhs, ListedOption<T>& rhs)
-	{
-		lhs.swap(rhs);
-	}
-
-	template <typename T>
-	class CustomSessionOption :public Option<T>
-	{
-	private:
-		std::wstring customname{};
-	public:
-		CustomSessionOption() noexcept {}
-		CustomSessionOption(std::wstring CustomName, T Value) :customname(CustomName), Option<T>(Value) {}
-		void SetName(std::wstring& NewName) { customname = NewName; }
-	};
-
-	class SessionOptions
-	{
-	private:
-		std::set<const void*> overriddenoptions{};
-		std::map <std::wstring, CustomSessionOption<unsigned int>> CustomNumberOptions{};
-		std::map <std::wstring, CustomSessionOption<std::wstring>> CustomStringOptions{};
-		std::vector<UserCredentials> TargetCredentials{};
-		std::vector<UserCredentials> ProxyCredentials{};
-		const bool HasCustomOptions() const noexcept;
-		void ApplyOptions(MI_DestinationOptions* Options, ErrorStack& SessionErrors) noexcept;
+		std::unique_ptr<MI_DestinationOptions> DestinationOptions{ nullptr };
+		std::map <std::wstring, unsigned int> CustomNumberOptions{};
+		std::map <std::wstring, std::wstring> CustomStringOptions{};
 		friend class Session;
 	public:
-		SessionOptions() noexcept {}
-		SessionOptions(const SessionOptions&) noexcept = default;
-		SessionOptions& operator=(const SessionOptions&) noexcept = default;
+		SessionOptions();
+		SessionOptions(const SessionOptions&) = delete;
+		SessionOptions& operator=(const SessionOptions&) = delete;
 		SessionOptions(SessionOptions&&) noexcept = default;
 		SessionOptions& operator=(SessionOptions&&) noexcept = default;
-		ListedOption<bool> CheckCACert{ overriddenoptions };
-		ListedOption<bool> CheckCertCN{ overriddenoptions };
-		ListedOption<bool> CheckCertRevocation{ overriddenoptions };
-		ListedOption<unsigned int> Port{ overriddenoptions };
-		ListedOption<bool> EncodePortInSPN{ overriddenoptions };
-		ListedOption<SessionPrefixOverrides> PrefixOverride{ overriddenoptions };
-		ListedOption<MI_DestinationOptions_ImpersonationType> ImpersonationType{ overriddenoptions };
-		ListedOption<unsigned int> MaxPacketSizeOverride{ overriddenoptions };
-		ListedOption<SessionPacketEncodingOptions> PacketEncoding{ overriddenoptions };
-		ListedOption<bool> PacketIntegrity{ overriddenoptions };
-		ListedOption<bool> PacketPrivacy{ overriddenoptions };
-		ListedOption<SessionProxyOptions> SessionProxyOption{ overriddenoptions };
-		ListedOption<bool> ProvideMachineName{ overriddenoptions };
-		ListedOption<SessionErrorModes> SessionErrorMode{ overriddenoptions };
-		ListedOption<Interval> Timeout{ overriddenoptions };
-		ListedOption<std::wstring> OperationLocale{ overriddenoptions };
-		ListedOption<std::wstring> UILocale{ overriddenoptions };
-		ListedOption<SessionProtocols> Protocol{ overriddenoptions };
-		ListedOption<bool> UseHTTPS{ overriddenoptions };
+		virtual ~SessionOptions();
+		void SetCheckCACert(bool Check);
+		void SetCheckCertCN(bool Check);
+		void SetCheckCertRevocation(bool Check);
+		void SetConnectionPort(unsigned int Port);
+		void SetEncodePortInSPN(bool Encode);
+		void SetHttpUrlPrefix(SessionPrefixOverrides Prefix);
+		void SetImpersonationType(MI_DestinationOptions_ImpersonationType Impersonation);
+		void SetMaxPacketSize(unsigned int Size);
+		void SetPacketEncoding(SessionPacketEncodingOptions Encoding);
+		void SetPacketIntegrity(bool Integrity);
+		void SetPacketPrivacy(bool Privacy);
+		void SetSessionProxyType(SessionProxyTypes ProxyType);
+		void SetSessionErrorMode(SessionErrorModes ErrorMode);
+		void SetTimeout(Interval Timeout);
+		void SetDataLocale(std::wstring Locale);
+		void SetUILocale(std::wstring Locale);
+		void SetSessionProtocol(SessionProtocols Protocol);
+		void SetUseHTTPS(bool Use);
 		void AddTargetCredentials(const UserCredentials& Credentials) noexcept;
 		void AddTargetCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
 		void AddProxyCredentials(const UserCredentials& Credentials) noexcept;
 		void AddProxyCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept;
-		void ClearTargetCredentials() noexcept;
-		void ClearProxyCredentials() noexcept;
-		void AddCustom(std::wstring Name, std::wstring Value);
-		void AddCustom(std::wstring Name, unsigned int Value);
-		void SetCustom(std::wstring Name, std::wstring Value);
-		void SetCustom(std::wstring Name, unsigned int Value);
-		void RemoveCustomString(std::wstring Name);
-		void RemoveAllCustomStrings();
-		void RemoveCustomNumber(std::wstring Name);
-		void RemoveAllCustomNumbers();
-		void RemoveAllCustom();
-		void ResetAll();
+		virtual void SetCustomOption(const std::wstring& OptionName, const int CustomValue) override;
+		virtual void SetCustomOption(const std::wstring& OptionName, const std::wstring CustomValue) override;
+		virtual void RemoveCustomStringOption(const std::wstring& OptionName) override;
+		virtual void RemoveCustomNumberOption(const std::wstring& OptionName) override;
+		virtual void Reset() override;
 	};
 
 	//forward declarations for use in Class and Instance
@@ -460,7 +386,7 @@ namespace CIMitar
 		Session& operator=(Session&&) noexcept = default;
 		virtual ~Session();
 		static Session NullSession;
-		SessionOptions Options{};
+		//SessionOptions Options{};
 		const ErrorStack LastErrors() noexcept;
 		const bool Connect();
 		const bool Connect(const SessionProtocols Protocol);
@@ -479,11 +405,14 @@ namespace CIMitar
 		Instance NewInstance(const Instance& SourceInstance) noexcept;
 		std::list<Instance> QueryInstances(const std::wstring& Query);
 		std::list<Instance> QueryInstances(const std::wstring& Namespace, const std::wstring& Query);
+		std::list<Instance> GetAssociatedInstances(const Instance& SourceInstance, const bool KeysOnly = false);
+		std::list<Instance> GetAssociatedInstances(const Instance& SourceInstance, const std::wstring& ResultClass, const bool KeysOnly = false);
+		std::list<Instance> GetAssociatedInstances(const Instance& SourceInstance, const std::wstring& AssociationClass, const std::wstring& ResultClass, const std::wstring& Role, const std::wstring& ResultRole, const bool KeysOnly = false);
 
 		friend Session NewSession();
 		friend Session NewSession(const std::wstring ComputerName);
-		friend Session NewSession(const SessionOptions& Options);
-		friend Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
+		//friend Session NewSession(const SessionOptions& Options);
+		//friend Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 		friend Session& GetDefaultSession() noexcept;
 	};
 	void swap(Session& lhs, Session& rhs) noexcept;
@@ -548,24 +477,24 @@ namespace CIMitar
 		ClientTypedCustomOperationOption(std::wstring CustomName, T Value, const MI_Type Type, const bool MustComply) :cimtype(Type), mustcomply(MustComply), CustomSessionOption<T>(CustomName, Value) {}
 	};
 
-	class OperationOptions
+	/*class OperationOptions
 	{
 	private:
 		std::set<const void*> overriddenoptions;
 	public:
-		ListedOption<bool> EnableWarningMessageChannel{ overriddenoptions };
-		ListedOption<bool> EnableVerboseMessageChannel{ overriddenoptions };
-		ListedOption<bool> EnableDebugMessageChannel{ overriddenoptions };
-		ListedOption<bool> PromptUserMode{ overriddenoptions };
-		ListedOption<std::pair<bool, bool>> PromptUserRegularMode{ overriddenoptions };
-		ListedOption<bool> PromptClientOnError{ overriddenoptions };
-		ListedOption<std::pair<bool, bool>> Force32Bit{ overriddenoptions };
-		ListedOption<std::wstring> ResourceURI{ overriddenoptions };
-		ListedOption<std::wstring> ResourceURIPrefix{ overriddenoptions };
-		ListedOption<Interval> Timeout{ overriddenoptions };
-		ListedOption<bool> ProvideMachineID{ overriddenoptions };
+		NativeOption<bool> EnableWarningMessageChannel{ overriddenoptions };
+		NativeOption<bool> EnableVerboseMessageChannel{ overriddenoptions };
+		NativeOption<bool> EnableDebugMessageChannel{ overriddenoptions };
+		NativeOption<bool> PromptUserMode{ overriddenoptions };
+		NativeOption<std::pair<bool, bool>> PromptUserRegularMode{ overriddenoptions };
+		NativeOption<bool> PromptClientOnError{ overriddenoptions };
+		NativeOption<std::pair<bool, bool>> Force32Bit{ overriddenoptions };
+		NativeOption<std::wstring> ResourceURI{ overriddenoptions };
+		NativeOption<std::wstring> ResourceURIPrefix{ overriddenoptions };
+		NativeOption<Interval> Timeout{ overriddenoptions };
+		NativeOption<bool> ProvideMachineID{ overriddenoptions };
 	};
-
+	*/
 	enum class CIMTypes
 	{
 		Boolean,
@@ -654,8 +583,8 @@ namespace CIMitar
 
 	Session NewSession();
 	Session NewSession(const std::wstring ComputerName);
-	Session NewSession(const SessionOptions& Options);
-	Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
+	//Session NewSession(const SessionOptions& Options);
+	//Session NewSession(const std::wstring ComputerName, const SessionOptions& Options);
 
 	using cimvaluevariant = std::variant<
 		int,

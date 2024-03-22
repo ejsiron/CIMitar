@@ -12,7 +12,10 @@ int main()
 {
 	CIMitar::Session sess{ CIMitar::NewSession() };
 	sess.Connect();
-	wcout << "Testing GetClass on Win32_Service\n";
+	wcout << L"Testing connection to local machine\n";
+	wcout << L"===================================\n";
+	wcout << L"Test connection result: " << boolalpha << sess.TestConnection() << L'\n';
+	wcout << "\nTesting GetClass on Win32_Service\n";
 	wcout << "=================================\n";
 	auto x = sess.GetClass(L"Win32_Service");
 	wcout << L"Class name: " << x.Name() << L'\n';
@@ -59,6 +62,34 @@ int main()
 	else
 	{
 		wcout << L"No instances found\n";
+	}
+	wcout.flush();
+
+	if (instances.size())
+	{
+		wcout << L"\nTesting GetAssociatedInstance on Win32_Service\n";
+		wcout << L"================================================\n";
+		//auto assocInstances{ sess.GetAssociatedInstances(instances.front(), L"CIM_Dependency", L"Antecedent") };
+		auto assocInstances{ sess.GetAssociatedInstances(instances.front()) };
+		wcout << L"Associated instance count: " << assocInstances.size() << L'\n';
+		if (assocInstances.size() > 0)
+		{
+			wcout << L"Showing first instance of " << assocInstances.size() << " associated instances" << L'\n';
+			wcout << assocInstances.front().CimClass().Name() << L'\n';
+			wcout << L"Instance properties:\n";
+			for (auto const& prop : assocInstances.front().Properties())
+			{
+				wcout << L"\nProperty: " << prop.Name() << L"\nValue: " << prop.GetValue().String() << L'\n';
+			}
+		}
+		else
+		{
+			wcout << L"No associated instances found\n";
+		}
+	}
+	else
+	{
+		wcout << "No instances to test GetAssociatedInstance\n";
 	}
 	wcout.flush();
 }

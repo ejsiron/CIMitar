@@ -13,6 +13,14 @@ static void ProcessResult(MI_Result Result, ErrorStack& ErrorLog, OpCodes OpCode
 	}
 }
 
+static void ClearDestinationOptions(MI_DestinationOptions* Options) noexcept
+{
+	if (Options != nullptr)
+	{
+		MI_DestinationOptions_Delete(Options);
+	}
+}
+
 template <typename OptionFunction, typename MIOptionContainer, typename... OptionArgs>
 void ApplyOption(ErrorStack& ErrorLog, OpCodes OpCode, wstring OptionName, OptionFunction Function, MIOptionContainer* Options, OptionArgs... Args)
 {
@@ -20,9 +28,19 @@ void ApplyOption(ErrorStack& ErrorLog, OpCodes OpCode, wstring OptionName, Optio
 	ProcessResult(OptionApplicationResult, ErrorLog, OpCode, OptionName);
 }
 
-const bool SessionOptions::HasCustomOptions() const noexcept
+SessionOptions::SessionOptions()
 {
-	return CustomStringOptions.size() && CustomNumberOptions.size();
+	Reset();
+}
+
+void SessionOptions::Reset()
+{
+	if (DestinationOptions)
+	{
+		ClearDestinationOptions(DestinationOptions.get());
+	}
+	MI_DestinationOptions NewOptions = MI_DESTINATIONOPTIONS_NULL;
+	DestinationOptions.reset(MI_DestinationOptions_New());
 }
 
 void SessionOptions::ApplyOptions(MI_DestinationOptions* Options, ErrorStack& SessionErrors) noexcept
@@ -32,12 +50,12 @@ void SessionOptions::ApplyOptions(MI_DestinationOptions* Options, ErrorStack& Se
 	{
 		for (auto const& StringOption : CustomStringOptions)
 		{
-			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, StringOption.first, MI_DestinationOptions_SetString, Options, StringOption.first.c_str(), StringOption.second.get().c_str());
+			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, StringOption.first, MI_DestinationOptions_SetString, Options, StringOption.first.c_str(), StringOption.second.Get().c_str());
 		}
 
 		for (auto const& NumericOption : CustomNumberOptions)
 		{
-			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, NumericOption.first, MI_DestinationOptions_SetNumber, Options, NumericOption.first.c_str(), NumericOption.second.get());
+			ApplyOption(SessionErrors, OpCodes::ApplyingDestinationOption, NumericOption.first, MI_DestinationOptions_SetNumber, Options, NumericOption.first.c_str(), NumericOption.second.Get());
 		}
 
 		//for (auto const& TargetCredential : TargetCredentials)
@@ -76,26 +94,6 @@ std::vector<MI_Result> Session::ApplyCustomOptions(variant<MI_OperationOptions*,
 	return Results;
 }
 
-void SessionOptions::AddCustom(wstring Name, wstring Value)
-{
-	CustomStringOptions[Name] = CustomSessionOption{ Name, Value };
-}
-
-void SessionOptions::AddCustom(wstring Name, unsigned int Value)
-{
-	CustomNumberOptions[Name] = CustomSessionOption{ Name, Value };
-}
-
-void SessionOptions::SetCustom(wstring Name, wstring Value)
-{
-	AddCustom(Name, Value);
-}
-
-void SessionOptions::SetCustom(wstring Name, unsigned int Value)
-{
-	AddCustom(Name, Value);
-}
-
 template<typename T>
 static void RemoveCustomOption(wstring Name, map<wstring, T>& OptionList)
 {
@@ -104,37 +102,6 @@ static void RemoveCustomOption(wstring Name, map<wstring, T>& OptionList)
 	{
 		OptionList.erase(location);
 	}
-}
-
-void SessionOptions::RemoveCustomString(wstring Name)
-{
-	RemoveCustomOption(Name, CustomStringOptions);
-}
-
-void SessionOptions::RemoveAllCustomStrings()
-{
-	CustomStringOptions.clear();
-}
-
-void SessionOptions::RemoveCustomNumber(wstring Name)
-{
-	RemoveCustomOption(Name, CustomNumberOptions);
-}
-
-void SessionOptions::RemoveAllCustomNumbers()
-{
-	CustomNumberOptions.clear();
-}
-
-void SessionOptions::RemoveAllCustom()
-{
-	RemoveAllCustomNumbers();
-	RemoveAllCustomStrings();
-}
-
-void SessionOptions::ResetAll()
-{
-	*this = SessionOptions();
 }
 
 void SessionOptions::AddTargetCredentials(const UserCredentials& Credentials) noexcept
@@ -155,14 +122,4 @@ void SessionOptions::AddProxyCredentials(const UserCredentials& Credentials) noe
 void SessionOptions::AddProxyCredentials(const MI_UsernamePasswordCreds* Credentials) noexcept
 {
 	ProxyCredentials.push_back(std::move(Credentials));
-}
-
-void SessionOptions::ClearTargetCredentials() noexcept
-{
-	TargetCredentials.clear();
-}
-
-void SessionOptions::ClearProxyCredentials() noexcept
-{
-	ProxyCredentials.clear();
 }

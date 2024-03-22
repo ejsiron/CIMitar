@@ -180,6 +180,7 @@
     <ClInclude Include="instance.hpp" />
     <ClInclude Include="localaddresses.hpp" />
     <ClInclude Include="operation.hpp" />
+    <ClInclude Include="options.h" />
     <ClInclude Include="stringformatters.hpp" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="utility.hpp" />
