@@ -11,13 +11,42 @@
 using namespace std;
 using namespace CIMitar;
 
-/* TODO: this CS is initialized but never deleted, which is only acceptable because
-	there is only ever one instance and the library is statically linked.
-	Windows will clean up the CS when the process ends. This saves the need for refcounting
-	or other tracking, which is ideal in this case because the overhead exceeds the value
-	and added risks of doing it "right".
-	Add logic for attach/detach if dynamic linking is ever implemented. */
-static CRITICAL_SECTION PasswordCriticalSection{ 0 };
+class EncryptionController
+{
+private:
+	/*
+	* This critical section is initialized on first access but not destroyed until the process exits.
+	* Ordinarily, this is considered bad practice. In this case, this is the only copy that will ever
+	* exist. The overhead of using refcounting or a singleton pattern is not worth the effort.
+	* Windows will clean up the critical section when the process exits.
+	*/
+	static CRITICAL_SECTION PasswordCriticalSection;
+	void LockMemoryForCrypt(void* Memory, DWORD MemorySize) noexcept
+	{
+		VirtualLock(Memory, MemorySize);
+	}
+
+public:
+	EncryptionController() noexcept
+	{
+		if (PasswordCriticalSection.OwningThread == 0)
+		{
+			InitializeCriticalSectionAndSpinCount(&PasswordCriticalSection, 0x4000);
+		}
+	}
+
+	static void EncryptSecret(const wchar_t* ClearText) noexcept
+	{
+		DWORD EncryptionPadding{ 0 };
+		DWORD ClearTextLength = (wcslen(ClearText) + 1) * sizeof(wchar_t);
+		DWORD EncryptedLength{ ClearTextLength };
+		if (EncryptionPadding = ClearTextLength % CRYPTPROTECTMEMORY_BLOCK_SIZE)
+		{
+			EncryptedLength += CRYPTPROTECTMEMORY_BLOCK_SIZE - EncryptionPadding;
+		}
+		PVOID EncryptedText = VirtualAlloc(NULL, EncryptedLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
+	}
+};
 
 const std::map<AuthenticationTypes, std::wstring> AuthTypeMap = {
 {AuthenticationTypes::DEFAULT, MI_AUTH_TYPE_DEFAULT},
