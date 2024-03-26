@@ -11,7 +11,7 @@
 using namespace std;
 using namespace CIMitar;
 
-class EncryptionController
+class CryptMemoryLocker
 {
 private:
 	/*
@@ -21,21 +21,26 @@ private:
 	* Windows will clean up the critical section when the process exits.
 	*/
 	static CRITICAL_SECTION PasswordCriticalSection;
-	void LockMemoryForCrypt(void* Memory, DWORD MemorySize) noexcept
-	{
-		VirtualLock(Memory, MemorySize);
-	}
-
-public:
-	EncryptionController() noexcept
+	static PVOID* Lock(DWORD Length)
 	{
 		if (PasswordCriticalSection.OwningThread == 0)
 		{
 			InitializeCriticalSectionAndSpinCount(&PasswordCriticalSection, 0x4000);
 		}
+		EnterCriticalSection(&PasswordCriticalSection);
+		PVOID locked = VirtualAlloc(NULL, Length, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
+		VirtualLock(locked, Length);	// todo: capture errors from GetLastError()
+		return &locked;
+	}
+	static void* Unlock(PVOID* Locked, DWORD Length)
+	{
+		VirtualUnlock(Locked, Length);
+		VirtualFree(Locked, 0, MEM_RELEASE);
+		LeaveCriticalSection(&PasswordCriticalSection);
 	}
 
-	static void EncryptSecret(const wchar_t* ClearText) noexcept
+public:
+	static vector<char> GetCipherText(wchar_t* ClearText)
 	{
 		DWORD EncryptionPadding{ 0 };
 		DWORD ClearTextLength = (wcslen(ClearText) + 1) * sizeof(wchar_t);
@@ -44,9 +49,9 @@ public:
 		{
 			EncryptedLength += CRYPTPROTECTMEMORY_BLOCK_SIZE - EncryptionPadding;
 		}
-		PVOID EncryptedText = VirtualAlloc(NULL, EncryptedLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
 	}
 };
+CRITICAL_SECTION CryptMemoryLocker::PasswordCriticalSection = { 0 };
 
 const std::map<AuthenticationTypes, std::wstring> AuthTypeMap = {
 {AuthenticationTypes::DEFAULT, MI_AUTH_TYPE_DEFAULT},
@@ -73,13 +78,7 @@ static volatile void* ZeroString(wchar_t* DoomedString)
 
 static pair<DWORD, vector<char>> EncryptSecret(const wchar_t* ClearText) noexcept
 {
-	DWORD EncryptionPadding{ 0 };
-	DWORD ClearTextLength = (wcslen(ClearText) + 1) * sizeof(wchar_t);
-	DWORD EncryptedLength{ ClearTextLength };
-	if (EncryptionPadding = ClearTextLength % CRYPTPROTECTMEMORY_BLOCK_SIZE)
-	{
-		EncryptedLength += CRYPTPROTECTMEMORY_BLOCK_SIZE - EncryptionPadding;
-	}
+
 	PVOID secret = VirtualAlloc(NULL, EncryptedLength, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
 	// todo: nullptr check
 	VirtualLock(secret, EncryptedLength);
@@ -136,7 +135,7 @@ UserCredentials::UserCredentials(const std::wstring Domain, const std::wstring U
 	secret =
 		EncryptionStatus == ERROR_SUCCESS ? static_cast<wchar_t*>(EncryptedText)
 		: L""
-	;
+		;
 	VirtualUnlock(EncryptedText, EncryptedLength);
 	VirtualFree(EncryptedText, 0, MEM_RELEASE);
 	if (ClearSource)
