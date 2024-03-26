@@ -21,18 +21,18 @@ private:
 	* Windows will clean up the critical section when the process exits.
 	*/
 	static CRITICAL_SECTION PasswordCriticalSection;
-	static PVOID* Lock(DWORD Length)
+	static PVOID Lock(DWORD Length)
 	{
 		if (PasswordCriticalSection.OwningThread == 0)
 		{
 			InitializeCriticalSectionAndSpinCount(&PasswordCriticalSection, 0x4000);
 		}
 		EnterCriticalSection(&PasswordCriticalSection);
-		PVOID locked = VirtualAlloc(NULL, Length, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID);
+		PVOID locked = VirtualAlloc(NULL, Length, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID); // todo: nullptr check
 		VirtualLock(locked, Length);	// todo: capture errors from GetLastError()
 		return &locked;
 	}
-	static void* Unlock(PVOID* Locked, DWORD Length)
+	static void* Unlock(PVOID Locked, DWORD Length)
 	{
 		VirtualUnlock(Locked, Length);
 		VirtualFree(Locked, 0, MEM_RELEASE);
@@ -49,6 +49,37 @@ public:
 		{
 			EncryptedLength += CRYPTPROTECTMEMORY_BLOCK_SIZE - EncryptionPadding;
 		}
+		PVOID CipherText = Lock(EncryptedLength);
+		memcpy_s(CipherText, EncryptedLength, ClearText, ClearTextLength);
+		CryptProtectMemory(CipherText, EncryptedLength, CRYPTPROTECTMEMORY_SAME_PROCESS);
+		DWORD EncryptionStatus = GetLastError();
+		vector<char> output{};
+		if (EncryptionStatus == ERROR_SUCCESS)
+		{
+			vector<char> output{ static_cast<char*>(CipherText), static_cast<char*>(CipherText) + EncryptedLength };
+		}
+		Unlock(CipherText, EncryptedLength);
+		return vector<char>{};
+	}
+
+	template <typename ApplyFunctionType>
+	static void ApplyCredentials(ApplyFunctionType ApplyFunction, void* TargetOption, MI_UserCredentials* Credentials)
+	{
+		MI_UserCredentials* credentials{ static_cast<MI_UserCredentials*>(
+			VirtualAlloc(NULL, sizeof(MI_UserCredentials), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE | PAGE_TARGETS_INVALID)
+			) };
+		//TODO check nullptr, GetLastError() has details
+		if (VirtualLock(credentials, sizeof(MI_UserCredentials)))
+		{
+			credentials->authenticationType = Credentials->authenticationType;
+			credentials->credentials.usernamePassword.domain = Credentials->credentials.usernamePassword.domain;
+			credentials->credentials.usernamePassword.username = Credentials->credentials.usernamePassword.username;
+			credentials->credentials.usernamePassword.password = Credentials->credentials.usernamePassword.password;
+			ApplyFunction(TargetOption, credentials);
+			VirtualUnlock(credentials, sizeof(MI_UserCredentials));
+		}
+		// else log error, GetLastError() has details
+		VirtualFree(credentials, 0, MEM_RELEASE);
 	}
 };
 CRITICAL_SECTION CryptMemoryLocker::PasswordCriticalSection = { 0 };
